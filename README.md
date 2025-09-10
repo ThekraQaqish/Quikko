@@ -1,6 +1,6 @@
 # Quikko - Unified Local Shopping Platform
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: All Rights Reserved](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](#)
 [![Node.js](https://img.shields.io/badge/Node.js-v20-green)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-v18-blue)](https://reactjs.org/)
 
