@@ -167,4 +167,5 @@ Open a Pull Request
 
 ### 📝 License
 
-MIT License © 2025 Thekra Qaqish ❤
+© 2025 Thekra Qaqish. All Rights Reserved. ❤
+
