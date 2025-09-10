@@ -167,12 +167,4 @@ Open a Pull Request
 
 ### 📝 License
 
-MIT License © 2025 Thekra Qaqish
-
-
-
-
-
-
-git clone https://github.com/ThekraQaqish/Quikko.git
-cd Quikko
+MIT License © 2025 Thekra Qaqish ❤
