@@ -7,6 +7,11 @@ pool.connect()
 const express = require('express');
 const app = express();
 
+const product = require ("./src/modules/product/productRoutes");
+
+app.use(express.json());
+app.use("/api", product);
+
 app.get('/', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users LIMIT 5');
