@@ -6,6 +6,12 @@ pool.connect()
 
 const express = require('express');
 const app = express();
+app.use(express.json());
+
+
+const deliveryRoutes = require("./src/modules/delivery/deliveryRoutes");
+
+app.use("/delivery", deliveryRoutes);
 
 app.get('/', async (req, res) => {
   try {
