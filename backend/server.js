@@ -11,6 +11,7 @@ pool
   .then(() => console.log("Connected to Render DB!"))
   .catch((err) => console.error("Connection error", err.stack));
 
+
 const categoryRoutes = require("./src/modules/category/categoryRoutes");
 app.use("/categories", categoryRoutes);
 
