@@ -4,12 +4,12 @@ const productController = require("./productController");
 const { createProductValidator } = require("./productValidators");
 
 // POST
-router.post("/products", createProductValidator,productController.createProduct);
+router.post("/", createProductValidator,productController.createProduct);
 
 // PUT 
-router.put("/products/:id", productController.updateProduct);
+router.put("/:id", productController.updateProduct);
 
 // DELETE 
-router.delete("/products/:id", productController.deleteProduct);
+router.delete("/:id", productController.deleteProduct);
 
 module.exports = router;
