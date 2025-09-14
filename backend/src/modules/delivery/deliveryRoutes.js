@@ -16,11 +16,11 @@ router.get("/tracking/:orderId", DeliveryController.getTrackingInfo);
 router.get("/coverage/:companyId", DeliveryController.getCoverageById);
 
 //get profile info
-// GET /delivery/profile
-router.get("/profile", DeliveryController.getProfile);
+// GET /delivery/profile/:id
+router.get("/profile/:id", DeliveryController.getCompanyProfile);
 
 // edit profile info name,areas
-// PUT /delivery/profile
-router.put("/profile", DeliveryController.updateProfile);
+// PUT /delivery/profile/:id
+router.put("/profile/:id", DeliveryController.updateCompanyProfile);
 
 module.exports = router;

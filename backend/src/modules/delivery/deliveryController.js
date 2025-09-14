@@ -12,7 +12,7 @@ const ALLOWED_STATUSES = [
 //the company can only edit the status of all orders assign to it 
 async function updateStatus(req, res) {
   const id = parseInt(req.params.id, 10);
-  const { status, company_id } = req.body; 
+  const { status, company_id } = req.body;
 
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({ error: "Invalid order id" });
@@ -61,6 +61,8 @@ async function updateStatus(req, res) {
   }
 }
 
+
+
 //get the tracking info from orders table
 async function getTrackingInfo(req, res) {
   const orderId = parseInt(req.params.orderId, 10);
@@ -105,64 +107,59 @@ async function getCoverageById(req, res) {
 }
 
 //to get the profile of the company
-async function getProfile(req, res) {
-  const { user_id } = req.body;
 
-  if (!user_id) {
-    return res.status(400).json({ error: "user_id is required" });
+async function getCompanyProfile(req, res) {
+  const companyId = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(companyId) || companyId <= 0) {
+    return res.status(400).json({ error: "Invalid company id" });
   }
 
   try {
-    const profile = await Delivery.getProfileByUserId(Number(user_id));
+    const profile = await Delivery.getProfileByCompanyId(companyId);
+
     if (!profile) {
       return res.status(404).json({ error: "Company not found" });
     }
 
-    return res.status(200).json(profile);
+    return res.status(200).json({ company: profile });
   } catch (err) {
-    console.error("Error fetching profile:", err);
+    console.error("Error fetching company profile:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
 
-//get the profile of the company 
-async function updateProfile(req, res) {
-  const { user_id, company_name, coverage_areas } = req.body;
 
-  if (!user_id) {
-    return res.status(400).json({ error: "user_id is required" });
+//edit the profile of the company 
+async function updateCompanyProfile(req, res) {
+  const companyId = parseInt(req.params.id, 10);
+  if (Number.isNaN(companyId) || companyId <= 0) {
+    return res.status(400).json({ error: "Invalid company id" });
   }
 
+  const { company_name, coverage_areas } = req.body;
+
   try {
-    const existing = await Delivery.getProfileByUserId(Number(user_id));
-    if (!existing) {
+    const updated = await Delivery.updateProfileByCompanyId(companyId, {
+      company_name,
+      coverage_areas,
+    });
+
+    if (!updated) {
       return res.status(404).json({ error: "Company not found" });
     }
 
-    const updated = await Delivery.updateProfile(
-      existing.company_id,
-      Number(user_id),
-      {
-        company_name,
-        coverage_areas,
-      }
-    );
-
-    return res.status(200).json({
-      message: "Profile updated successfully",
-      company: updated,
-    });
+    return res.status(200).json({ company: updated });
   } catch (err) {
-    console.error("Error updating profile:", err);
+    console.error("Error updating company profile:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
-
 
 module.exports = {
   updateStatus,
   getTrackingInfo,
   getCoverageById,
-  getProfile,
-  updateProfile,
+  getCompanyProfile,
+  updateCompanyProfile,
 };

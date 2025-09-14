@@ -13,14 +13,4 @@ const deliveryRoutes = require("./src/modules/delivery/deliveryRoutes");
 
 app.use("/delivery", deliveryRoutes);
 
-app.get('/', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM users LIMIT 5');
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Database error');
-  }
-});
-
 app.listen(3000, () => console.log('Server running on port 3000'));
