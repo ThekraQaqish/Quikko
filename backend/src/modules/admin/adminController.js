@@ -1,5 +1,6 @@
 // src/modules/admin/adminController.js
 const pool = require('../../config/db');
+const Admin = require("./adminModel");
 
 exports.getPendingVendors = async (req, res) => {
   const { rows } = await pool.query(`SELECT * FROM vendors WHERE status='pending'`);
@@ -94,3 +95,15 @@ exports.rejectDelivery = async (req, res) => {
   }
 };
 
+exports.listAllCompanies = async (req, res) => {
+  try {
+    const companies = await Admin.getAllDeliveryCompanies();
+    if (!companies || companies.length === 0) {
+      return res.status(404).json({ error: "No delivery companies found" });
+    }
+    res.status(200).json({ companies });
+  } catch (err) {
+    console.error("Error fetching delivery companies (Admin):", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
