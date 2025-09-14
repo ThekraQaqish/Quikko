@@ -156,10 +156,57 @@ async function updateCompanyProfile(req, res) {
   }
 }
 
+//get all orders for the company by its id
+async function listCompanyOrders(req, res) {
+  const companyId = parseInt(req.params.companyId, 10);
+
+  if (Number.isNaN(companyId) || companyId <= 0) {
+    return res.status(400).json({ error: "Invalid company id" });
+  }
+
+  try {
+    const orders = await Delivery.getOrdersByCompanyId(companyId);
+    return res.status(200).json({ orders });
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+async function addOrUpdateCoverage(req, res) {
+  const companyId = parseInt(req.params.companyId, 10);
+  if (Number.isNaN(companyId) || companyId <= 0) {
+    return res.status(400).json({ error: "Invalid company id" });
+  }
+
+  const { areas } = req.body; // JSON body: { "areas": ["Amman", "Irbid"] }
+  if (!Array.isArray(areas) || areas.length === 0) {
+    return res.status(400).json({ error: "areas must be a non-empty array" });
+  }
+
+  try {
+    const updatedCompany = await Delivery.updateCoverageByCompanyId(
+      companyId,
+      areas
+    );
+
+    if (!updatedCompany) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    return res.status(200).json({ company: updatedCompany });
+  } catch (err) {
+    console.error("Error updating coverage areas:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
 module.exports = {
   updateStatus,
   getTrackingInfo,
   getCoverageById,
   getCompanyProfile,
   updateCompanyProfile,
+  listCompanyOrders,
+  addOrUpdateCoverage,
 };
