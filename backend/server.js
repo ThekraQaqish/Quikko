@@ -4,7 +4,6 @@ const pool = require('./src/config/db');
 const app = express();
 app.use(express.json());
 
-
 // Test DB connection
 pool.connect()
   .then(() => console.log("Connected to Render DB!"))
@@ -29,7 +28,8 @@ app.use('/api/admin', adminRoutes);
 const productRoutes = require('./src/modules/product/productRoutes');
 app.use('/api/products', productRoutes);
 
-
+const paymentRoutes = require("./src/modules/payment/paymentRoutes");
+app.use("/api/payment", paymentRoutes);
 
 //Server Listener
 const PORT = process.env.PORT || 3000;
