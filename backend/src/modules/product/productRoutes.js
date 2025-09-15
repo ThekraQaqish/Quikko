@@ -1,7 +1,10 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const productController = require("./productController");
+const productController = require('./productController');
 const { createProductValidator } = require("./productValidators");
+
+// GET /products/:id
+router.get('/:id', productController.getProduct);
 
 // POST
 router.post("/", createProductValidator,productController.createProduct);
