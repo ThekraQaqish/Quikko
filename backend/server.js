@@ -1,31 +1,32 @@
-const pool = require('./src/config/db'); 
+require('dotenv').config();
+const express = require('express');
+const pool = require('./src/config/db');
+const app = express();
+app.use(express.json());
 
+// Test DB connection
 pool.connect()
   .then(() => console.log("Connected to Render DB!"))
   .catch(err => console.error("Connection error", err.stack));
 
-const express = require('express');
-const app = express();
-
-// Routes
 const categoryRoutes = require('./src/modules/category/categoryRoutes');
-const vendorRoutes = require('./src/modules/vendor/vendorRoutes');
-const productRoutes = require('./src/modules/product/productRoutes');
-
-app.get('/', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM users LIMIT 5');
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Database error');
-  }
-});
-
-// Use modules
 app.use('/categories', categoryRoutes);
+
+const vendorRoutes = require('./src/modules/vendor/vendorRoutes');
 app.use('/stores', vendorRoutes);
-app.use('/products', productRoutes);
+
+const deliveryRoutes = require("./src/modules/delivery/deliveryRoutes");
+app.use("/delivery", deliveryRoutes);
+
+const authRoutes = require('./src/modules/auth/authRoutes');
+app.use('/api/auth', authRoutes);
+
+const adminRoutes = require('./src/modules/admin/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
+const productRoutes = require('./src/modules/product/productRoutes');
+app.use('/api/products', productRoutes);
 
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
