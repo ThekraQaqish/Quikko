@@ -4,11 +4,13 @@ const pool = require('./src/config/db');
 const app = express();
 app.use(express.json());
 
+
 // Test DB connection
 pool.connect()
   .then(() => console.log("Connected to Render DB!"))
   .catch(err => console.error("Connection error", err.stack));
 
+//Routes
 const categoryRoutes = require('./src/modules/category/categoryRoutes');
 app.use('/categories', categoryRoutes);
 
@@ -28,5 +30,7 @@ const productRoutes = require('./src/modules/product/productRoutes');
 app.use('/api/products', productRoutes);
 
 
+
+//Server Listener
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
