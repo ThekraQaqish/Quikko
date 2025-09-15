@@ -1,15 +1,18 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const productController = require("./productController");
+const productController = require('./productController');
 const { createProductValidator } = require("./productValidators");
 
-// POST
-router.post("/", createProductValidator,productController.createProduct);
+// GET /products/:id
+router.get('/:id', productController.getProduct);
 
-// PUT 
+// POST /products
+router.post("/", createProductValidator, productController.createProduct);
+
+// PUT /products/:id
 router.put("/:id", productController.updateProduct);
 
-// DELETE 
+// DELETE /products/:id
 router.delete("/:id", productController.deleteProduct);
 
 module.exports = router;
