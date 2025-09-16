@@ -44,6 +44,12 @@ app.use("/api", notificationRoutes);
 
 const userRoutes = require("./src/modules/user/userRoutes");
 app.use("/api/users", userRoutes);
+
+const cmsRoutes = require('./src/modules/cms/cmsRoutes');
+app.use('/api', cmsRoutes);
+
+
+
 // Server Listener
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
