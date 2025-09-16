@@ -1,11 +1,11 @@
-const pool = require('../../config/db');
+const pool = require("../../config/db");
 
-const findById = async (id) => {
-  const result = await pool.query('SELECT * FROM users WHERE id=$1', [id]);
+exports.findById = async (id) => {
+  const result = await pool.query("SELECT * FROM users WHERE id=$1", [id]);
   return result.rows[0];
 };
 
-const updateById = async (id, name, phone, address) => {
+exports.updateById = async (id, name, phone, address) => {
   const result = await pool.query(
     `UPDATE users SET name=$1, phone=$2, address=$3, updated_at=NOW() WHERE id=$4 RETURNING *`,
     [name, phone, address, id]
@@ -148,5 +148,106 @@ exports.trackOrder = async function (orderId, customerId) {
   return result.rows[0];
 };
 
+// Get all data from cart_items table
+exports.getCart = async (userId) => {
+  const query = `
+    SELECT id, user_id, product_id, quantity, variant, created_at, updated_at
+    FROM cart_items WHERE user_id = $1;
+  `;
+  const values = [userId];
+  return db.query(query, values);
+};
 
-module.exports = { findById, updateById };
+// Get data from one Cart
+exports.getOneCart = async (id, userId) => {
+  const query = `
+    SELECT id, user_id, product_id, quantity, variant, created_at, updated_at
+    FROM cart_items WHERE id = $1 AND user_id = $2;
+  `;
+  const values = [id, userId];
+  return db.query(query, values);
+};
+
+// Data from cart_items table to add
+exports.insertIntoCart = async (cartData) => {
+  const { user_id, product_id, quantity, variant, created_at, updated_at } =
+    cartData;
+
+  const query = `
+    INSERT INTO cart_items 
+    ( user_id, product_id, quantity, variant, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *;
+  `;
+
+  const values = [
+    user_id,
+    product_id,
+    quantity,
+    variant,
+    created_at,
+    updated_at,
+  ];
+
+  return db.query(query, values);
+};
+
+// this is for ubdate the items inside cart
+exports.updateCart = async (id, userId, cartData) => {
+  const { product_id, quantity, variant } = cartData;
+
+  const query = `
+    UPDATE cart_items
+    SET product_id = $1,
+        quantity = $2,
+        variant = $3,
+        updated_at = NOW()
+    WHERE id = $4 AND user_id = $5
+    RETURNING *;
+  `;
+
+  const values = [
+    product_id,
+    quantity,
+    variant ? JSON.stringify(variant) : null,
+    id,
+    userId,
+  ];
+
+  const result = await db.query(query, values);
+  return result.rows[0];
+};
+
+// this is for delete the cart
+exports.deleteCart = async (id, userId) => {
+  const query = `DELETE FROM cart_items WHERE id = $1 AND user_id = $2`;
+  await db.query(query, [id, userId]);
+};
+
+// Get all data from products table
+exports.getAllProducts = async ({ search, categoryId, page, limit }) => {
+  let baseQuery = `
+    SELECT *
+    FROM products
+    WHERE 1=1
+  `;
+  const values = [];
+  let idx = 1;
+
+  if (search) {
+    baseQuery += ` AND name ILIKE $${idx++}`;
+    values.push(`%${search}%`);
+  }
+
+  if (categoryId) {
+    baseQuery += ` AND category_id = $${idx++}`;
+    values.push(categoryId);
+  }
+
+  baseQuery += ` ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx}`;
+  values.push(limit);
+  values.push((page - 1) * limit);
+
+  const { rows } = await db.query(baseQuery, values);
+  return rows;
+};

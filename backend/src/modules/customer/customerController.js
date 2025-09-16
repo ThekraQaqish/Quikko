@@ -1,4 +1,6 @@
-const customerModel = require('./customerModel');
+const customerService = require("./customerService");
+const customerModel = require("./customerModel");
+const { validationResult } = require("express-validator");
 
 exports.getProfile = async (req, res) => {
   try {
@@ -7,7 +9,7 @@ exports.getProfile = async (req, res) => {
     res.json(profile);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Error fetching profile');
+    res.status(500).send("Error fetching profile");
   }
 };
 
@@ -61,7 +63,9 @@ exports.postOrder = async function (req, res) {
     const { items, address } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: "Order must have at least one item" });
+      return res
+        .status(400)
+        .json({ error: "Order must have at least one item" });
     }
 
     if (!address) {
@@ -79,8 +83,6 @@ exports.postOrder = async function (req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
 
 exports.getOrderDetails = async function (req, res) {
   try {
@@ -131,3 +133,100 @@ exports.trackOrder = async function (req, res) {
   }
 };
 
+// Get All the Carts
+exports.getCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await customerService.getCart(userId);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error getting cart:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Get One Cart by it's id
+exports.getOneCart = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const result = await customerModel.getOneCart(id, userId);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error getting cart:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Add cart
+exports.addToCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { product_id, quantity, variant } = req.body;
+
+    const cartData = {
+      user_id: userId,
+      product_id,
+      quantity,
+      variant,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    const result = await customerService.addToCart(cartData);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Error adding to cart:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Update cart
+exports.updateCart = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const updatedCart = await customerModel.updateCart(id, userId, req.body);
+    res.json({ message: "Cart updated successfully", data: updatedCart });
+  } catch (err) {
+    console.error("Update Cart error:", err);
+    res.status(500).json({ message: "Error updating cart" });
+  }
+};
+
+// Delete cart
+exports.deleteCart = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    await customerModel.deleteCart(id, userId);
+    res.json({ message: "Cart deleted successfully" });
+  } catch (err) {
+    console.error("Delete Cart error:", err);
+    res.status(500).json({ message: "Error deleting cart" });
+  }
+};
+
+// Get all products with filter and search
+exports.getAllProducts = async (req, res) => {
+  try {
+    const { search, categoryId, page = 1, limit = 10 } = req.query;
+
+    const filters = {
+      search: search || null,
+      categoryId: categoryId ? parseInt(categoryId) : null,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    };
+
+    const result = await customerModel.getAllProducts(filters);
+    return res.json(result);
+  } catch (err) {
+    console.error("Get products error:", err);
+    res.status(500).json({ message: "Error getting products" });
+  }
+};
