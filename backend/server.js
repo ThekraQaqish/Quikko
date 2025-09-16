@@ -36,7 +36,9 @@ app.use('/api/reviews', reviewRoutes);
 const customerRoutes = require('./src/modules/customer/customerRoutes');
 app.use('/api/customer', customerRoutes);
 
+const paymentRoutes = require("./src/modules/payment/paymentRoutes");
+app.use("/api/payment", paymentRoutes);
 
-
+//Server Listener
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
