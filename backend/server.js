@@ -50,6 +50,10 @@ app.use('/api', cmsRoutes);
 
 
 
+const chatRoutes = require('./src/modules/chat/chatRoutes');
+app.use('/api', chatRoutes);
+
+
 // Server Listener
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
