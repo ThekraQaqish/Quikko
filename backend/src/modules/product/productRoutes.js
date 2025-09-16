@@ -6,13 +6,13 @@ const { createProductValidator } = require("./productValidators");
 // GET /products/:id
 router.get('/:id', productController.getProduct);
 
-// POST
-router.post("/", createProductValidator,productController.createProduct);
+// POST /products
+router.post("/", createProductValidator, productController.createProduct);
 
-// PUT 
+// PUT /products/:id
 router.put("/:id", productController.updateProduct);
 
-// DELETE 
+// DELETE /products/:id
 router.delete("/:id", productController.deleteProduct);
 
 module.exports = router;

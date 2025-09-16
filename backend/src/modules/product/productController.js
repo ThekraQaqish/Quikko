@@ -19,9 +19,7 @@ const getProduct = async (req, res) => {
 const createProduct = async (req, res) => {
   try {
     const result = await productService.createProduct(req.body);
-    res
-      .status(201)
-      .json({ message: "Product added!", product: result.rows[0] });
+    res.status(201).json({ message: "Product added!", product: result.rows[0] });
   } catch (error) {
     console.error("Product creation error:", error);
     res.status(500).json({ message: "Internal Server Error" });
