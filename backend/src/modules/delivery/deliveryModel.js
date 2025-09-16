@@ -71,6 +71,7 @@ async function updateProfileByCompanyId(companyId, data) {
   return result.rows[0];
 }
 
+
 async function getOrdersByCompanyId(companyId) {
   const result = await pool.query(
     `SELECT id, customer_id, total_amount, status, payment_status, shipping_address, created_at, updated_at
@@ -113,13 +114,8 @@ async function updateCoverageByCompanyId(companyId, newAreas) {
 }
 
 
-
-
-
-
 module.exports = {
-  getOrderWithCompany,
-  updateStatus, //for PUT api/delivery/orders/:id
+updateStatus, //for PUT api/delivery/orders/:id
   getOrderById, //for GET api/delivery/tracking/:orderid
   getCoverageById, //for GET api/delivery/coverage/:companyid
   getProfileByCompanyId, //for GET api/delivery/profile/:companyid
@@ -127,3 +123,4 @@ module.exports = {
   getOrdersByCompanyId, //for GET api/delivery/orders/:companyud
   updateCoverageByCompanyId, // for put api/delivery/coverage/:companyid
 };
+

@@ -9,6 +9,8 @@ const getVendors = async (req, res) => {
     res.status(500).send('Error fetching vendors');
   }
 };
+
+module.exports = { getVendors };
 const getVendorReport = async (req, res) => {
   try {
     const { vendorId } = req.params;

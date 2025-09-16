@@ -9,7 +9,6 @@ pool.connect()
   .then(() => console.log("Connected to Render DB!"))
   .catch(err => console.error("Connection error", err.stack));
 
-//Routes
 const categoryRoutes = require('./src/modules/category/categoryRoutes');
 app.use('/categories', categoryRoutes);
 
@@ -27,6 +26,15 @@ app.use('/api/admin', adminRoutes);
 
 const productRoutes = require('./src/modules/product/productRoutes');
 app.use('/api/products', productRoutes);
+
+const orderRoutes = require('./src/modules/order/orderRoutes');
+app.use('/api/orders', orderRoutes);
+
+const reviewRoutes = require('./src/modules/review/reviewRoutes');
+app.use('/api/reviews', reviewRoutes);
+
+const customerRoutes = require('./src/modules/customer/customerRoutes');
+app.use('/api/customer', customerRoutes);
 
 const paymentRoutes = require("./src/modules/payment/paymentRoutes");
 app.use("/api/payment", paymentRoutes);

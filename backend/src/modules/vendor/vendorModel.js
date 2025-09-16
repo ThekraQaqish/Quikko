@@ -5,6 +5,8 @@ const getAllVendors = async () => {
   return result.rows;
 };
 
+module.exports = { getAllVendors };
+
 async function getVendorReport(vendorId) {
   const query = `
     SELECT 

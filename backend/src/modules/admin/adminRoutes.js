@@ -13,6 +13,7 @@ router.get('/deliveries/pending', adminController.getPendingDeliveries);
 router.put('/deliveries/:deliveryId/approve', adminController.approveDelivery);
 router.put('/deliveries/:deliveryId/reject', adminController.rejectDelivery);
 
+
 router.get("/delivery-companies", adminController.listAllCompanies);
 
 module.exports = router;
