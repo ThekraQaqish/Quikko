@@ -1,40 +1,71 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { messaging, getToken, onMessage } from "./app/firebase-messaging";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [fcmToken, setFcmToken] = useState("");
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/firebase-messaging-sw.js")
+        .then(registration => {
+          // طلب إذن الإشعارات
+          Notification.requestPermission().then(permission => {
+            if (permission !== "granted") return;
+
+            // جلب FCM token
+            getToken(messaging, {
+              vapidKey: "BLY_cpu5gN9scFU7TMhCd-RMC_meMwCVVry4a97ZPRoDDMYiNztIMRz9i8CEX95_0XNeBk7FMtY0VPyQ-dm2zCU",
+              serviceWorkerRegistration: registration
+            })
+              .then(token => {
+                console.log("FCM Token:", token);
+                setFcmToken(token);
+              })
+              .catch(console.error);
+
+            // استقبال الرسائل عند الصفحة المفتوحة
+            onMessage(messaging, payload => {
+              console.log("Message received:", payload);
+              if (payload.notification) {
+                new Notification(payload.notification.title, {
+                  body: payload.notification.body,
+                  icon: "/favicon.ico"
+                });
+              }
+            });
+          });
+        })
+        .catch(console.error);
+    }
+  }, []);
+
+  const sendTestNotification = async () => {
+  try {
+    const res = await fetch("http://localhost:3000/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: 1, // user id
+        title: "Test Notification",
+        message: "Hello from backend",
+        type: "test"
+      })
+    });
+    const data = await res.json();
+    console.log(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   return (
-    <>
-      <div>
-        <div className="h-screen flex items-center justify-center bg-blue-500">
-        <h1 className="text-4xl font-bold text-white">
-          Tailwind is working ✅
-        </h1>
-      </div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div>
+      <h1>React + FCM Test</h1>
+      <button onClick={sendTestNotification}>Send Test Notification</button>
+    </div>
+  );
 }
 
-export default App
+export default App;
