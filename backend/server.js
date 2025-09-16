@@ -5,6 +5,14 @@ const pool = require("./src/config/db");
 const app = express();
 app.use(express.json());
 
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:5173', // أسمح للفرونت إند فقط
+  methods: ['GET','POST','PUT','DELETE'],
+  credentials: true // إذا تحتاج الكوكيز أو توكنات الجلسة
+}));
+
+
 // Test DB connection
 pool
   .connect()
@@ -42,6 +50,13 @@ app.use("/api/customer", customerRoutes);
 const paymentRoutes = require("./src/modules/payment/paymentRoutes");
 app.use("/api/payment", paymentRoutes);
 
-//Server Listener
+const notificationRoutes = require("./src/infrastructure/notification/notificationRoutes");
+app.use("/api", notificationRoutes);
+
+const userRoutes = require("./src/modules/user/userRoutes");
+app.use("/api/users", userRoutes);
+
+
+// Server Listener
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
