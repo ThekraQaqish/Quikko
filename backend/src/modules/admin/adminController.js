@@ -1,6 +1,7 @@
 // src/modules/admin/adminController.js
 const pool = require('../../config/db');
 const Admin = require("./adminModel");
+const adminService=require("./adminService");
 
 
 exports.getVendors = async (req, res) => {
@@ -116,5 +117,14 @@ exports.listAllCompanies = async (req, res) => {
   } catch (err) {
     console.error("Error fetching delivery companies (Admin):", err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await adminService.getAllOrders();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 };
