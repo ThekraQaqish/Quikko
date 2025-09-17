@@ -69,3 +69,39 @@ exports.updateOrderStatus = async (req, res) => {
       .json({ success: false, message: "Error updating order status" });
   }
 };
+// Get vendor products
+exports.getProducts = async (req, res) => {
+  try {
+    const vendorId = req.user.id; // Assuming vendor logged in
+    const products = await vendorModel.getVendorProducts(vendorId);
+    res.json(products);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error fetching products");
+  }
+};
+
+// GET /api/vendor/profile
+exports.getProfile = async (req, res) => {
+  try {
+    const user_id = req.user.id; // JWT middleware
+    const profile = await vendorModel.getProfile(user_id);
+    res.json(profile);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error fetching vendor profile");
+  }
+};
+
+// PUT /api/vendor/profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const updatedProfile = await vendorModel.updateProfile(user_id, req.body);
+    res.json(updatedProfile);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error updating vendor profile");
+  }
+};
+
