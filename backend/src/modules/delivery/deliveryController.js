@@ -85,26 +85,7 @@ async function getTrackingInfo(req, res) {
 }
 
 
-//dislay the coverage area for specific company
-async function getCoverageById(req, res) {
-  const companyId = parseInt(req.params.companyId, 10);
 
-  if (Number.isNaN(companyId) || companyId <= 0) {
-    return res.status(400).json({ error: "Invalid company id" });
-  }
-
-  try {
-    const company = await Delivery.getCoverageById(companyId);
-    if (!company) {
-      return res.status(404).json({ error: "Company not found" });
-    }
-
-    return res.status(200).json(company);
-  } catch (err) {
-    console.error("Error fetching coverage area:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
 
 //to get the profile of the company
 
@@ -173,19 +154,40 @@ async function listCompanyOrders(req, res) {
   }
 }
 
-async function addOrUpdateCoverage(req, res) {
+//dislay the coverage area for specific company
+async function getCoverageById(req, res) {
+  const companyId = parseInt(req.params.companyId, 10);
+
+  if (Number.isNaN(companyId) || companyId <= 0) {
+    return res.status(400).json({ error: "Invalid company id" });
+  }
+
+  try {
+    const company = await Delivery.getCoverageById(companyId);
+    if (!company) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    return res.status(200).json(company);
+  } catch (err) {
+    console.error("Error fetching coverage area:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+async function addCoverage(req, res) {
   const companyId = parseInt(req.params.companyId, 10);
   if (Number.isNaN(companyId) || companyId <= 0) {
     return res.status(400).json({ error: "Invalid company id" });
   }
 
-  const { areas } = req.body; // JSON body: { "areas": ["Amman", "Irbid"] }
+  const areas  = req.body.coverage_areas; // JSON body: { "areas": ["Amman", "Irbid"] }
   if (!Array.isArray(areas) || areas.length === 0) {
     return res.status(400).json({ error: "areas must be a non-empty array" });
   }
 
   try {
-    const updatedCompany = await Delivery.updateCoverageByCompanyId(
+    const updatedCompany = await Delivery.addCoverageByCompanyId(
       companyId,
       areas
     );
@@ -208,5 +210,5 @@ module.exports = {
   getCompanyProfile,
   updateCompanyProfile,
   listCompanyOrders,
-  addOrUpdateCoverage,
+  addCoverage,
 };

@@ -19,13 +19,13 @@ pool.connect()
 
 // Routes
 const categoryRoutes = require('./src/modules/category/categoryRoutes');
-app.use('/categories', categoryRoutes);
+app.use('/api/categories', categoryRoutes);
 
 const vendorRoutes = require("./src/modules/vendor/vendorRoutes");
 app.use("/api/vendor", vendorRoutes);
 
 const deliveryRoutes = require("./src/modules/delivery/deliveryRoutes");
-app.use("/delivery", deliveryRoutes);
+app.use("/api/delivery", deliveryRoutes);
 
 const authRoutes = require('./src/modules/auth/authRoutes');
 app.use('/api/auth', authRoutes);
@@ -45,7 +45,8 @@ app.use("/api/users", userRoutes);
 const cmsRoutes = require('./src/modules/cms/cmsRoutes');
 app.use('/api', cmsRoutes);
 
-
+const customerRoutes = require('./src/modules/customer/customerRoutes');
+app.use('/api/customer', customerRoutes);
 
 const chatRoutes = require('./src/modules/chat/chatRoutes');
 app.use('/api', chatRoutes);
