@@ -2,6 +2,17 @@
 const pool = require('../../config/db');
 const Admin = require("./adminModel");
 
+
+exports.getVendors = async (req, res) => {
+  try {
+    const vendors = await Admin.getAllVendors();
+    res.json({ success: true, data: vendors });
+  } catch (err) {
+    console.error("Get vendors error:", err);
+    res.status(500).json({ success: false, message: "Error fetching vendors" });
+  }
+};
+
 exports.getPendingVendors = async (req, res) => {
   const { rows } = await pool.query(`SELECT * FROM vendors WHERE status='pending'`);
   res.json(rows);

@@ -52,7 +52,7 @@ const insertProduct = async (productData) => {
 };
 
 // Update product
-const updateProduct = async (id, productData) => {
+const updateProduct = async (id, vendor_id, productData) => {
   const {
     name,
     description,
@@ -73,7 +73,7 @@ const updateProduct = async (id, productData) => {
         category_id = $6,
         variants = $7,
         updated_at = NOW()
-    WHERE id = $8
+    WHERE id = $8 AND vendor_id = $9
     RETURNING *;
   `;
 
@@ -86,6 +86,7 @@ const updateProduct = async (id, productData) => {
     category_id,
     variants ? JSON.stringify(variants) : null,
     id,
+    vendor_id
   ];
 
   const result = await db.query(query, values);
@@ -93,9 +94,9 @@ const updateProduct = async (id, productData) => {
 };
 
 // Delete product
-const deleteProduct = async (id) => {
-  const query = `DELETE FROM products WHERE id = $1;`;
-  await db.query(query, [id]);
+const deleteProduct = async (id, vendor_id) => {
+  const query = `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`;
+  await db.query(query, [id, vendor_id]);
 };
 
 module.exports = {

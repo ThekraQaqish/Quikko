@@ -4,6 +4,7 @@ const router = express.Router();
 const adminController = require('./adminController');
 
 // Vendors
+router.get('/vendors', adminController.getVendors);
 router.get('/vendors/pending', adminController.getPendingVendors);
 router.put('/vendors/:vendorId/approve', adminController.approveVendor);
 router.put('/vendors/:vendorId/reject', adminController.rejectVendor);
