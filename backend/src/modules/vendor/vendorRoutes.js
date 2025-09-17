@@ -15,4 +15,15 @@ router.get('/orders', protect, vendorController.getOrders);
 // Update order status
 router.put('/orders/:id', protect, updateOrderStatusValidator, vendorController.updateOrderStatus);
 
+//  Vendor products
+router.get("/products", protect, vendorController.getProducts);
+
+// Get vendor profile
+router.get("/profile", protect, vendorController.getProfile);
+
+// Update vendor profile
+router.put("/profile", protect, vendorController.updateProfile);
+
+
+
 module.exports = router;

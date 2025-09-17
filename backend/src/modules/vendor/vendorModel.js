@@ -65,3 +65,73 @@ exports.updateOrderStatus = async (orderId, status) => {
   const { rows } = await pool.query(query, [status, orderId]);
   return rows[0];
 };
+
+// Get all products for a specific vendor
+exports.getVendorProducts = async (vendorId) => {
+  const result = await pool.query("SELECT * FROM products WHERE vendor_id=$1", [vendorId]);
+  return result.rows;
+};
+
+// Get vendor profile by user_id
+exports.getProfile = async (userId) => {
+  const query = `
+    SELECT id, user_id, store_name, store_slug, store_logo, store_banner, 
+           description, status, commission_rate, contact_email, phone, 
+           address, social_links, rating, created_at, updated_at
+    FROM vendors
+    WHERE user_id = $1
+  `;
+  const { rows } = await pool.query(query, [userId]);
+  return rows[0];
+};
+
+// Update vendor profile (almost all editable fields)
+exports.updateProfile = async (
+  userId,
+  {
+    store_name,
+    store_slug,
+    store_logo,
+    store_banner,
+    description,
+    status,
+    contact_email,
+    phone,
+    address,
+    social_links,
+  }
+) => {
+  const query = `
+    UPDATE vendors
+    SET store_name = $1,
+        store_slug = $2,
+        store_logo = $3,
+        store_banner = $4,
+        description = $5,
+        status = $6,
+        contact_email = $7,
+        phone = $8,
+        address = $9,
+        social_links = $10,
+        updated_at = NOW()
+    WHERE user_id = $11
+    RETURNING *;
+  `;
+
+  const values = [
+    store_name,
+    store_slug,
+    store_logo,
+    store_banner,
+    description,
+    status,
+    contact_email,
+    phone,
+    address,
+    social_links,
+    userId,
+  ];
+
+  const { rows } = await pool.query(query, values);
+  return rows[0];
+};
