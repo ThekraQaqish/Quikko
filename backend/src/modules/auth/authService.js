@@ -1,10 +1,10 @@
 const pool = require('../../config/db');
-const admin = require('../../infrastructure/firebase');
+const { admin } = require('../../infrastructure/firebase');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { insertUser, insertCustomer, insertVendor, insertDelivery } = require('../../modules/user/userRepository');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 exports.register = async (data, role) => {
   let firebaseUser;

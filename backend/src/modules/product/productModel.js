@@ -1,7 +1,20 @@
 const db = require("../../config/db");
 
-// Data from product table to add
-exports.insertProduct = async (productData) => {
+// Get product by ID with details
+const getProductById = async (id) => {
+  const result = await db.query(
+    `SELECT p.*, v.store_name, c.name AS category_name
+     FROM products p
+     JOIN vendors v ON p.vendor_id = v.id
+     JOIN categories c ON p.category_id = c.id
+     WHERE p.id = $1`,
+    [id]
+  );
+  return result.rows[0];
+};
+
+// Insert product
+const insertProduct = async (productData) => {
   const {
     vendor_id,
     name,
@@ -38,8 +51,8 @@ exports.insertProduct = async (productData) => {
   return db.query(query, values);
 };
 
-// this is for ubdate
-exports.updateProduct = async (id, productData) => {
+// Update product
+const updateProduct = async (id, vendor_id, productData) => {
   const {
     name,
     description,
@@ -48,7 +61,6 @@ exports.updateProduct = async (id, productData) => {
     images,
     category_id,
     variants,
-    updated_at,
   } = productData;
 
   const query = `
@@ -61,7 +73,7 @@ exports.updateProduct = async (id, productData) => {
         category_id = $6,
         variants = $7,
         updated_at = NOW()
-    WHERE id = $8
+    WHERE id = $8 AND vendor_id = $9
     RETURNING *;
   `;
 
@@ -74,14 +86,22 @@ exports.updateProduct = async (id, productData) => {
     category_id,
     variants ? JSON.stringify(variants) : null,
     id,
+    vendor_id
   ];
 
   const result = await db.query(query, values);
   return result.rows[0];
 };
 
-// this is for delete
-exports.deleteProduct = async (id) => {
-  const query = `DELETE FROM products WHERE id = $1;`;
-  await db.query(query, [id]);
+// Delete product
+const deleteProduct = async (id, vendor_id) => {
+  const query = `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`;
+  await db.query(query, [id, vendor_id]);
+};
+
+module.exports = {
+  getProductById,
+  insertProduct,
+  updateProduct,
+  deleteProduct,
 };

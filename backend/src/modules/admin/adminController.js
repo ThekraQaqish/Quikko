@@ -1,5 +1,18 @@
 // src/modules/admin/adminController.js
 const pool = require('../../config/db');
+const Admin = require("./adminModel");
+const adminService=require("./adminService");
+
+
+exports.getVendors = async (req, res) => {
+  try {
+    const vendors = await Admin.getAllVendors();
+    res.json({ success: true, data: vendors });
+  } catch (err) {
+    console.error("Get vendors error:", err);
+    res.status(500).json({ success: false, message: "Error fetching vendors" });
+  }
+};
 
 exports.getPendingVendors = async (req, res) => {
   const { rows } = await pool.query(`SELECT * FROM vendors WHERE status='pending'`);
@@ -94,3 +107,24 @@ exports.rejectDelivery = async (req, res) => {
   }
 };
 
+exports.listAllCompanies = async (req, res) => {
+  try {
+    const companies = await Admin.getAllDeliveryCompanies();
+    if (!companies || companies.length === 0) {
+      return res.status(404).json({ error: "No delivery companies found" });
+    }
+    res.status(200).json({ companies });
+  } catch (err) {
+    console.error("Error fetching delivery companies (Admin):", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+exports.getAllOrders = async (req, res) => {
+  try {
+    const orders = await adminService.getAllOrders();
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
