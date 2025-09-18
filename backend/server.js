@@ -48,7 +48,8 @@ app.use("/api/users", userRoutes);
 const cmsRoutes = require('./src/modules/cms/cmsRoutes');
 app.use('/api', cmsRoutes);
 
-
+const customerRoutes = require('./src/modules/customer/customerRoutes');
+app.use('/api/customer', customerRoutes);
 
 const chatRoutes = require('./src/modules/chat/chatRoutes');
 app.use('/api', chatRoutes);
