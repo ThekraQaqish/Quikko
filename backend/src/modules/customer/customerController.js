@@ -133,52 +133,36 @@ exports.trackOrder = async function (req, res) {
   }
 };
 
-// Get All the Carts
-exports.getCart = async (req, res) => {
+// Get all carts
+exports.getAllCarts = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const result = await customerService.getCart(userId);
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Error getting cart:", error);
+    const carts = await customerService.getAllCarts();
+    res.json(carts);
+  } catch (err) {
+    console.error("Error getting carts:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// Get One Cart by it's id
-exports.getOneCart = async (req, res) => {
+// Get one cart with items
+exports.getCartById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    const result = await customerModel.getOneCart(id, userId);
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Error getting cart:", error);
+    const cart = await customerService.getCartById(req.params.id);
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    res.json(cart);
+  } catch (err) {
+    console.error("Error getting cart:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// Add cart
-exports.addToCart = async (req, res) => {
+// Create cart
+exports.createCart = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { product_id, quantity, variant } = req.body;
-
-    const cartData = {
-      user_id: userId,
-      product_id,
-      quantity,
-      variant,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-
-    const result = await customerService.addToCart(cartData);
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error("Error adding to cart:", error);
+    const cart = await customerService.createCart(req.user.id);
+    res.status(201).json(cart);
+  } catch (err) {
+    console.error("Error creating cart:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -186,30 +170,65 @@ exports.addToCart = async (req, res) => {
 // Update cart
 exports.updateCart = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    const updatedCart = await customerModel.updateCart(id, userId, req.body);
-    res.json({ message: "Cart updated successfully", data: updatedCart });
+    const { user_id } = req.body;
+    const cart = await customerService.updateCart(req.params.id, user_id);
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    res.json(cart);
   } catch (err) {
-    console.error("Update Cart error:", err);
-    res.status(500).json({ message: "Error updating cart" });
+    console.error("Error updating cart:", err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 // Delete cart
 exports.deleteCart = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    await customerModel.deleteCart(id, userId);
-    res.json({ message: "Cart deleted successfully" });
+    const cart = await customerService.deleteCart(req.params.id);
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    res.json({ message: "Cart deleted" });
   } catch (err) {
-    console.error("Delete Cart error:", err);
-    res.status(500).json({ message: "Error deleting cart" });
+    console.error("Error deleting cart:", err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+// Add item
+exports.addItem = async (req, res) => {
+  try {
+    const { cart_id, product_id, quantity, variant } = req.body;
+    const item = await customerService.addItem(cart_id, product_id, quantity, variant);
+    res.status(201).json(item);
+  } catch (err) {
+    console.error("Error adding item:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Update item
+exports.updateItem = async (req, res) => {
+  try {
+    const { quantity, variant } = req.body;
+    const item = await customerService.updateItem(req.params.id, quantity, variant);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    res.json(item);
+  } catch (err) {
+    console.error("Error updating item:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Delete item
+exports.deleteItem = async (req, res) => {
+  try {
+    const item = await customerService.deleteItem(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    res.json({ message: "Item deleted" });
+  } catch (err) {
+    console.error("Error deleting item:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 
 // Get all products with filter and search
 exports.getAllProducts = async (req, res) => {

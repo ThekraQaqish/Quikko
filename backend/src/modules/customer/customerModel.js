@@ -148,81 +148,79 @@ exports.trackOrder = async function (orderId, customerId) {
   return result.rows[0];
 };
 
-// Get all data from cart_items table
-exports.getCart = async (userId) => {
-  const query = `
-    SELECT id, user_id, product_id, quantity, variant, created_at, updated_at
-    FROM cart_items WHERE user_id = $1;
-  `;
-  const values = [userId];
-  return pool.query(query, values);
+
+// ========== Carts ==========
+
+// Get all carts
+exports.getAllCarts = async () => {
+  const result = await pool.query("SELECT * FROM carts ORDER BY created_at DESC");
+  return result.rows;
 };
 
-// Get data from one Cart
-exports.getOneCart = async (id, userId) => {
-  const query = `
-    SELECT id, user_id, product_id, quantity, variant, created_at, updated_at
-    FROM cart_items WHERE id = $1 AND user_id = $2;
-  `;
-  const values = [id, userId];
-  return pool.query(query, values);
+// Get one cart with items
+exports.getCartById = async (id) => {
+  const cartRes = await pool.query("SELECT * FROM carts WHERE id = $1", [id]);
+  if (cartRes.rows.length === 0) return null;
+
+  const itemsRes = await pool.query("SELECT * FROM cart_items WHERE cart_id = $1", [id]);
+
+  return { ...cartRes.rows[0], items: itemsRes.rows };
 };
 
-// Data from cart_items table to add
-exports.insertIntoCart = async (cartData) => {
-  const { user_id, product_id, quantity, variant, created_at, updated_at } =
-    cartData;
-
-  const query = `
-    INSERT INTO cart_items 
-    ( user_id, product_id, quantity, variant, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING *;
-  `;
-
-  const values = [
-    user_id,
-    product_id,
-    quantity,
-    variant,
-    created_at,
-    updated_at,
-  ];
-
-  return pool.query(query, values);
-};
-
-// this is for ubdate the items inside cart
-exports.updateCart = async (id, userId, cartData) => {
-  const { product_id, quantity, variant } = cartData;
-
-  const query = `
-    UPDATE cart_items
-    SET product_id = $1,
-        quantity = $2,
-        variant = $3,
-        updated_at = NOW()
-    WHERE id = $4 AND user_id = $5
-    RETURNING *;
-  `;
-
-  const values = [
-    product_id,
-    quantity,
-    variant ? JSON.stringify(variant) : null,
-    id,
-    userId,
-  ];
-
-  const result = await pool.query(query, values);
+// Create cart
+exports.createCart = async (userId) => {
+  const result = await pool.query(
+    "INSERT INTO carts (user_id) VALUES ($1) RETURNING *",
+    [userId]
+  );
   return result.rows[0];
 };
 
-// this is for delete the cart
-exports.deleteCart = async (id, userId) => {
-  const query = `DELETE FROM cart_items WHERE id = $1 AND user_id = $2`;
-  await pool.query(query, [id, userId]);
+// Update cart
+exports.updateCart = async (id, userId) => {
+  const result = await pool.query(
+    "UPDATE carts SET user_id = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
+    [userId, id]
+  );
+  return result.rows[0];
 };
+
+// Delete cart
+exports.deleteCart = async (id) => {
+  await pool.query("DELETE FROM cart_items WHERE cart_id = $1", [id]);
+  const result = await pool.query("DELETE FROM carts WHERE id = $1 RETURNING *", [id]);
+  return result.rows[0];
+};
+
+// ========== Items ==========
+
+// Add item
+exports.addItem = async (cartId, productId, quantity, variant) => {
+  const result = await pool.query(
+    `INSERT INTO cart_items (cart_id, product_id, quantity, variant)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [cartId, productId, quantity, variant]
+  );
+  return result.rows[0];
+};
+
+// Update item
+exports.updateItem = async (id, quantity, variant) => {
+  const result = await pool.query(
+    `UPDATE cart_items 
+     SET quantity = $1, variant = $2, updated_at = NOW() 
+     WHERE id = $3 RETURNING *`,
+    [quantity, variant, id]
+  );
+  return result.rows[0];
+};
+
+// Delete item
+exports.deleteItem = async (id) => {
+  const result = await pool.query("DELETE FROM cart_items WHERE id = $1 RETURNING *", [id]);
+  return result.rows[0];
+};
+
 
 // Get all data from products table
 exports.getAllProducts = async ({ search, categoryId, page, limit }) => {

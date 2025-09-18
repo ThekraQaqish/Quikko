@@ -1,7 +1,6 @@
 const pool = require("../../config/db");
 
 // Get order joined with delivery company
-// Get order joined with delivery company
 async function getOrderWithCompany(orderId) {
   const result = await pool.query(
     `SELECT o.*, dc.id AS company_id, dc.company_name
@@ -115,7 +114,8 @@ async function updateCoverageByCompanyId(companyId, newAreas) {
 
 
 module.exports = {
-updateStatus, //for PUT api/delivery/orders/:id
+  getOrderWithCompany,
+  updateStatus, //for PUT api/delivery/orders/:id
   getOrderById, //for GET api/delivery/tracking/:orderid
   getCoverageById, //for GET api/delivery/coverage/:companyid
   getProfileByCompanyId, //for GET api/delivery/profile/:companyid
