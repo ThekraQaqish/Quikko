@@ -72,11 +72,17 @@ exports.updateOrderStatus = async (req, res) => {
 // Get vendor products
 exports.getProducts = async (req, res) => {
   try {
-    const vendorId = req.user.id; // Assuming vendor logged in
-    const products = await vendorModel.getVendorProducts(vendorId);
+    const userId = req.user.id;
+
+    const vendor = await vendorModel.getVendorByUserId(userId);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    const products = await vendorModel.getVendorProducts(vendor.id);
+ 
     res.json(products);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching vendor products:", err);
     res.status(500).send("Error fetching products");
   }
 };
