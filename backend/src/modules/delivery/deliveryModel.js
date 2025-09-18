@@ -1,8 +1,33 @@
 const pool = require("../../config/db");
 
+//additional task -- get the profile for the company 
+exports.getProfileByUserId = async function (userId) {
+  const result = await pool.query(
+    `SELECT id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at
+     FROM delivery_companies
+     WHERE user_id = $1`,
+    [userId]
+  );
+  return result.rows[0];
+};
+
+exports.updateProfileByUserId = async function (userId, data) {
+  const { company_name, coverage_areas } = data;
+
+  const result = await pool.query(
+    `UPDATE delivery_companies
+     SET company_name = COALESCE($1, company_name),
+         coverage_areas = COALESCE($2, coverage_areas),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE user_id = $3
+     RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
+    [company_name, coverage_areas, userId]
+  );
+
+  return result.rows[0];
+};
 // Get order joined with delivery company
-// Get order joined with delivery company
-async function getOrderWithCompany(orderId) {
+exports.getOrderWithCompany = async function (orderId) {
   const result = await pool.query(
     `SELECT o.*, dc.id AS company_id, dc.company_name
      FROM orders o
@@ -11,67 +36,47 @@ async function getOrderWithCompany(orderId) {
     [orderId]
   );
   return result.rows[0];
-}
-async function updateStatus(id, status) {
+};
+
+exports.updateStatus = async function (orderId, status) {
   const result = await pool.query(
     `UPDATE orders
      SET status = $1, updated_at = CURRENT_TIMESTAMP
      WHERE id = $2
      RETURNING *`,
-    [status, id]
+    [status, orderId]
   );
   return result.rows[0];
-}
+};
 
 //tracking info for the order
-async function getOrderById(orderId) {
+exports.getOrderById = async function (orderId) {
   const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [
     orderId,
   ]);
   return result.rows[0];
-}
-
-//get coverage area for specific company
-async function getCoverageById(companyId) {
+};
+exports.getCompanyByUserId = async function (userId) {
   const result = await pool.query(
-    `SELECT id AS company_id, company_name, coverage_areas 
-     FROM delivery_companies 
-     WHERE id = $1`,
-    [companyId]
-  );
-  return result.rows[0];
-}
-
-
-//additional task -- get the profile for the company 
-async function getProfileByCompanyId(companyId) {
-  const result = await pool.query(
-    `SELECT id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at
+    `SELECT id AS company_id, user_id, company_name
      FROM delivery_companies
-     WHERE id = $1`,
-    [companyId]
+     WHERE user_id = $1`,
+    [userId]
   );
   return result.rows[0];
-}
+};
 
 
-async function updateProfileByCompanyId(companyId, data) {
-  const { company_name, coverage_areas } = data;
-
+exports.getCompany = async function (userId) {
   const result = await pool.query(
-    `UPDATE delivery_companies
-     SET company_name = COALESCE($1, company_name),
-         coverage_areas = COALESCE($2, coverage_areas),
-         updated_at = CURRENT_TIMESTAMP
-     WHERE id = $3
-     RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
-    [company_name, coverage_areas, companyId]
+    `SELECT id AS company_id FROM delivery_companies WHERE user_id = $1`,
+    [userId]
   );
+  // استخرج فقط company_id كرقم
+  return result.rows[0]?.company_id || null;
+};
 
-  return result.rows[0];
-}
-
-async function getOrdersByCompanyId(companyId) {
+exports.getOrdersByCompanyId = async function (companyId) {
   const result = await pool.query(
     `SELECT id, customer_id, total_amount, status, payment_status, shipping_address, created_at, updated_at
      FROM orders
@@ -80,50 +85,47 @@ async function getOrdersByCompanyId(companyId) {
     [companyId]
   );
   return result.rows;
-}
+};
 
-async function updateCoverageByCompanyId(companyId, newAreas) {
-  // newAreas: مصفوفة جديدة ["Amman", "Irbid"]
-  // أولاً نجيب الـ current coverage
+//get coverage area for specific company
+exports.getCoverageById = async function (userId) {
   const result = await pool.query(
-    `SELECT coverage_areas
+    `SELECT id AS company_id, company_name, coverage_areas 
+     FROM delivery_companies 
+     WHERE user_id = $1`,
+    [userId]
+  );
+  return result.rows[0];
+};
+
+
+exports.addCoverage = async function (userId, newAreas) {
+  // newAreas: مصفوفة جديدة ["Amman", "Irbid"]
+  const result = await pool.query(
+    `SELECT id, coverage_areas
      FROM delivery_companies
-     WHERE id = $1`,
-    [companyId]
+     WHERE user_id = $1`,
+    [userId]
   );
 
   if (result.rows.length === 0) return null;
 
+  const companyId = result.rows[0].id;
   const currentAreas = result.rows[0].coverage_areas?.areas || [];
 
   // دمج المناطق الجديدة بدون تكرار
   const mergedAreas = Array.from(new Set([...currentAreas, ...newAreas]));
 
   // تحديث الـ coverage_areas
-  const updateResult = await pool.query(
-    `UPDATE delivery_companies
-     SET coverage_areas = $1,
-         updated_at = CURRENT_TIMESTAMP
-     WHERE id = $2
-     RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
-    [{ areas: mergedAreas }, companyId]
-  );
+ const updateResult = await pool.query(
+   `UPDATE delivery_companies
+   SET coverage_areas = $1,
+       updated_at = CURRENT_TIMESTAMP
+   WHERE user_id = $2
+   RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
+   [mergedAreas, userId] // mergedAreas مصفوفة من النصوص
+ );
+
 
   return updateResult.rows[0];
-}
-
-
-
-
-
-
-module.exports = {
-  getOrderWithCompany,
-  updateStatus, //for PUT api/delivery/orders/:id
-  getOrderById, //for GET api/delivery/tracking/:orderid
-  getCoverageById, //for GET api/delivery/coverage/:companyid
-  getProfileByCompanyId, //for GET api/delivery/profile/:companyid
-  updateProfileByCompanyId, //for PUT api/delivery/profile/:companyid
-  getOrdersByCompanyId, //for GET api/delivery/orders/:companyud
-  updateCoverageByCompanyId, // for put api/delivery/coverage/:companyid
 };
