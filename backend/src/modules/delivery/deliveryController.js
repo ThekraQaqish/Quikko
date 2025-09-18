@@ -21,7 +21,7 @@ exports.getCompanyProfile = async function (req, res) {
   }
 };
 
-//edit the profile of the company 
+//edit the profile of the company
 exports.updateCompanyProfile = async function (req, res) {
   const userId = req.user.id; // جاي من التوكن بالـ authMiddleware
   const { company_name, coverage_areas } = req.body;
@@ -108,7 +108,6 @@ exports.updateOrderStatus = async function (req, res) {
   }
 };
 
-
 //get the tracking info from orders table
 exports.getTrackingInfo = async function (req, res) {
   try {
@@ -170,7 +169,6 @@ exports.listCompanyOrders = async function (req, res) {
   }
 };
 
-
 //dislay the coverage area for specific company
 exports.getCoverage = async function (req, res) {
   const userId = req.user.id; // جاي من التوكن بعد ما تتحقق الـ auth
@@ -189,7 +187,6 @@ exports.getCoverage = async function (req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 exports.addCoverage = async function (req, res) {
   const userId = req.user.id; // من التوكن بعد الـ auth middleware

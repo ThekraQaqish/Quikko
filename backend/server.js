@@ -25,7 +25,7 @@ const vendorRoutes = require("./src/modules/vendor/vendorRoutes");
 app.use("/api/vendor", vendorRoutes);
 
 const deliveryRoutes = require("./src/modules/delivery/deliveryRoutes");
-app.use("/delivery", deliveryRoutes);
+app.use("/api/delivery", deliveryRoutes);
 
 const authRoutes = require('./src/modules/auth/authRoutes');
 app.use('/api/auth', authRoutes);

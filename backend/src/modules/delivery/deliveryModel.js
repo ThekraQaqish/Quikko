@@ -1,5 +1,6 @@
 const pool = require("../../config/db");
 
+//additional task -- get the profile for the company
 exports.getProfileByUserId = async function (userId) {
   const result = await pool.query(
     `SELECT id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at
@@ -25,8 +26,8 @@ exports.updateProfileByUserId = async function (userId, data) {
 
   return result.rows[0];
 };
+// Get order joined with delivery company
 exports.getOrderWithCompany = async function (orderId) {
-async function getOrderWithCompany(orderId) {
   const result = await pool.query(
     `SELECT o.*, dc.id AS company_id, dc.company_name
      FROM orders o
@@ -48,6 +49,7 @@ exports.updateStatus = async function (orderId, status) {
   return result.rows[0];
 };
 
+//tracking info for the order
 exports.getOrderById = async function (orderId) {
   const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [
     orderId,
@@ -64,21 +66,16 @@ exports.getCompanyByUserId = async function (userId) {
   return result.rows[0];
 };
 
-
 exports.getCompany = async function (userId) {
   const result = await pool.query(
     `SELECT id AS company_id FROM delivery_companies WHERE user_id = $1`,
     [userId]
   );
+  // استخرج فقط company_id كرقم
   return result.rows[0]?.company_id || null;
 };
 
 exports.getOrdersByCompanyId = async function (companyId) {
-  return result.rows[0];
-}
-
-
-async function getOrdersByCompanyId(companyId) {
   const result = await pool.query(
     `SELECT id, customer_id, total_amount, status, payment_status, shipping_address, created_at, updated_at
      FROM orders
@@ -89,6 +86,7 @@ async function getOrdersByCompanyId(companyId) {
   return result.rows;
 };
 
+//get coverage area for specific company
 exports.getCoverageById = async function (userId) {
   const result = await pool.query(
     `SELECT id AS company_id, company_name, coverage_areas 
@@ -99,8 +97,8 @@ exports.getCoverageById = async function (userId) {
   return result.rows[0];
 };
 
-
 exports.addCoverage = async function (userId, newAreas) {
+  // newAreas: مصفوفة جديدة ["Amman", "Irbid"]
   const result = await pool.query(
     `SELECT id, coverage_areas
      FROM delivery_companies
@@ -113,27 +111,18 @@ exports.addCoverage = async function (userId, newAreas) {
   const companyId = result.rows[0].id;
   const currentAreas = result.rows[0].coverage_areas?.areas || [];
 
+  // دمج المناطق الجديدة بدون تكرار
   const mergedAreas = Array.from(new Set([...currentAreas, ...newAreas]));
 
- const updateResult = await pool.query(
-   `UPDATE delivery_companies
+  // تحديث الـ coverage_areas
+  const updateResult = await pool.query(
+    `UPDATE delivery_companies
    SET coverage_areas = $1,
        updated_at = CURRENT_TIMESTAMP
    WHERE user_id = $2
    RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
-   [mergedAreas, userId]  
- );
-
+    [mergedAreas, userId] // mergedAreas مصفوفة من النصوص
+  );
 
   return updateResult.rows[0];
-module.exports = {
-  getOrderWithCompany,
-  updateStatus, 
-  getOrderById, 
-  getCoverageById, 
-  getProfileByCompanyId, 
-  updateProfileByCompanyId, 
-  getOrdersByCompanyId,
-  updateCoverageByCompanyId,
 };
-
