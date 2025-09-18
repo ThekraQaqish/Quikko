@@ -21,11 +21,8 @@ pool.connect()
 const categoryRoutes = require('./src/modules/category/categoryRoutes');
 app.use('/categories', categoryRoutes);
 
-const productRoutes = require('./src/modules/product/productRoutes');
-app.use('/api/products', productRoutes);
-
-const vendorRoutes = require('./src/modules/vendor/vendorRoutes');
-app.use('/stores', vendorRoutes);
+const vendorRoutes = require("./src/modules/vendor/vendorRoutes");
+app.use("/api/vendor", vendorRoutes);
 
 const deliveryRoutes = require("./src/modules/delivery/deliveryRoutes");
 app.use("/delivery", deliveryRoutes);

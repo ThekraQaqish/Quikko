@@ -18,8 +18,11 @@ const getProduct = async (req, res) => {
 // Add Product
 const createProduct = async (req, res) => {
   try {
-    const result = await productService.createProduct(req.body);
-    res.status(201).json({ message: "Product added!", product: result.rows[0] });
+    const vendorId = req.user.id;
+    const result = await productService.createProduct(vendorId, req.body);
+    res
+      .status(201)
+      .json({ message: "Product added!", product: result.rows[0] });
   } catch (error) {
     console.error("Product creation error:", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -30,7 +33,11 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedProduct = await productModel.updateProduct(id, req.body);
+    const vendorId = req.user.id;
+    const updatedProduct = await productService.updateProduct(id, vendorId, req.body);
+
+    if (!updatedProduct) return res.status(404).json({ message: "Product not found" });
+
     res.json({ message: "Product updated successfully", data: updatedProduct });
   } catch (err) {
     console.error("Update product error:", err);
@@ -42,7 +49,12 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    await productModel.deleteProduct(id);
+    const vendorId = req.user.id;
+
+    await productService.deleteProduct(id, vendorId);
+
+    if (!deleted) return res.status(404).json({ message: "Product not found" });
+    
     res.json({ message: "Product deleted successfully" });
   } catch (err) {
     console.error("Delete product error:", err);

@@ -5,6 +5,7 @@ const adminController = require('./adminController');
 const { protect, authorizeRole } = require('../../middleware/authMiddleware');
 
 // Vendors
+router.get('/vendors', adminController.getVendors);
 router.get('/vendors/pending', adminController.getPendingVendors);
 router.put('/vendors/:vendorId/approve', adminController.approveVendor);
 router.put('/vendors/:vendorId/reject', adminController.rejectVendor);

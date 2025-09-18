@@ -155,7 +155,7 @@ exports.getCart = async (userId) => {
     FROM cart_items WHERE user_id = $1;
   `;
   const values = [userId];
-  return db.query(query, values);
+  return pool.query(query, values);
 };
 
 // Get data from one Cart
@@ -165,7 +165,7 @@ exports.getOneCart = async (id, userId) => {
     FROM cart_items WHERE id = $1 AND user_id = $2;
   `;
   const values = [id, userId];
-  return db.query(query, values);
+  return pool.query(query, values);
 };
 
 // Data from cart_items table to add
@@ -189,7 +189,7 @@ exports.insertIntoCart = async (cartData) => {
     updated_at,
   ];
 
-  return db.query(query, values);
+  return pool.query(query, values);
 };
 
 // this is for ubdate the items inside cart
@@ -214,14 +214,14 @@ exports.updateCart = async (id, userId, cartData) => {
     userId,
   ];
 
-  const result = await db.query(query, values);
+  const result = await pool.query(query, values);
   return result.rows[0];
 };
 
 // this is for delete the cart
 exports.deleteCart = async (id, userId) => {
   const query = `DELETE FROM cart_items WHERE id = $1 AND user_id = $2`;
-  await db.query(query, [id, userId]);
+  await pool.query(query, [id, userId]);
 };
 
 // Get all data from products table
@@ -248,6 +248,6 @@ exports.getAllProducts = async ({ search, categoryId, page, limit }) => {
   values.push(limit);
   values.push((page - 1) * limit);
 
-  const { rows } = await db.query(baseQuery, values);
+  const { rows } = await pool.query(baseQuery, values);
   return rows;
 };
