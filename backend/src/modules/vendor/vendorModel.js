@@ -67,8 +67,19 @@ exports.updateOrderStatus = async (orderId, status) => {
 };
 
 // Get all products for a specific vendor
+exports.getVendorByUserId = async (userId) => {
+  const result = await pool.query(
+    "SELECT id FROM vendors WHERE user_id = $1",
+    [userId]
+  );
+  return result.rows[0]; 
+};
+ 
 exports.getVendorProducts = async (vendorId) => {
-  const result = await pool.query("SELECT * FROM products WHERE vendor_id=$1", [vendorId]);
+  const result = await pool.query(
+    "SELECT * FROM products WHERE vendor_id = $1",
+    [vendorId]
+  );
   return result.rows;
 };
 
