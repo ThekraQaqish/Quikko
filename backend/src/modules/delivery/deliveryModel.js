@@ -1,7 +1,6 @@
 const pool = require("../../config/db");
 
 // Get order joined with delivery company
-// Get order joined with delivery company
 async function getOrderWithCompany(orderId) {
   const result = await pool.query(
     `SELECT o.*, dc.id AS company_id, dc.company_name
@@ -71,6 +70,7 @@ async function updateProfileByCompanyId(companyId, data) {
   return result.rows[0];
 }
 
+
 async function getOrdersByCompanyId(companyId) {
   const result = await pool.query(
     `SELECT id, customer_id, total_amount, status, payment_status, shipping_address, created_at, updated_at
@@ -113,10 +113,6 @@ async function updateCoverageByCompanyId(companyId, newAreas) {
 }
 
 
-
-
-
-
 module.exports = {
   getOrderWithCompany,
   updateStatus, //for PUT api/delivery/orders/:id
@@ -127,3 +123,4 @@ module.exports = {
   getOrdersByCompanyId, //for GET api/delivery/orders/:companyud
   updateCoverageByCompanyId, // for put api/delivery/coverage/:companyid
 };
+
