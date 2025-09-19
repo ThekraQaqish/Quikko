@@ -7,7 +7,7 @@ const { updateOrderStatusValidator } = require('./vendorValidators');
 // GET /stores
 router.get('/stores', vendorController.getVendors);
 
-router.get("/reports/:vendorId", vendorController.getVendorReport);
+router.get("/reports", protect, vendorController.getVendorReport);
 
 // Get all orders for vendor
 router.get('/orders', protect, vendorController.getOrders);

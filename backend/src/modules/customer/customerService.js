@@ -1,21 +1,20 @@
 const customerModel = require("./customerModel");
 
-exports.getCart = async (userId) => {
-  return customerModel.getCart(userId);
-};
+// Carts
+exports.getAllCarts = async () => await customerModel.getAllCarts();
+exports.getCartById = async (id) => await customerModel.getCartById(id);
+exports.createCart = async (userId) => await customerModel.createCart(userId);
+exports.updateCart = async (id, userId) => await customerModel.updateCart(id, userId);
+exports.deleteCart = async (id) => await customerModel.deleteCart(id);
 
-exports.getOneCart = async (id, userId) => {
-  return customerModel.getOneCart(id, userId);
-};
+// Items
+exports.addItem = async (cartId, productId, quantity, variant) =>
+  await customerModel.addItem(cartId, productId, quantity, variant);
 
-exports.addToCart = async (body) => {
-  const now = new Date();
+exports.updateItem = async (id, quantity, variant) =>
+  await customerModel.updateItem(id, quantity, variant);
 
-  const cartData = {
-    ...body,
-    created_at: now,
-    updated_at: now,
-  };
+exports.deleteItem = async (id) => await customerModel.deleteItem(id);
 
-  return customerModel.insertIntoCart(cartData);
-};
+
+

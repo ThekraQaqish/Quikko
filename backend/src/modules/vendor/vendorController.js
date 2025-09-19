@@ -12,13 +12,9 @@ exports.getVendors = async (req, res) => {
 
 exports.getVendorReport = async (req, res) => {
   try {
-    const { vendorId } = req.params;
+    const userId = req.user.id; // من التوكن
 
-    if (isNaN(vendorId)) {
-      return res.status(400).json({ error: "Invalid vendorId" });
-    }
-
-    const report = await vendorModel.getVendorReport(vendorId);
+    const report = await vendorModel.getVendorReport(userId);
 
     if (!report) {
       return res
@@ -35,6 +31,7 @@ exports.getVendorReport = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 // Get vendor orders
 exports.getOrders = async (req, res) => {
@@ -72,11 +69,17 @@ exports.updateOrderStatus = async (req, res) => {
 // Get vendor products
 exports.getProducts = async (req, res) => {
   try {
-    const vendorId = req.user.id; // Assuming vendor logged in
-    const products = await vendorModel.getVendorProducts(vendorId);
+    const userId = req.user.id;
+
+    const vendor = await vendorModel.getVendorByUserId(userId);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    const products = await vendorModel.getVendorProducts(vendor.id);
+ 
     res.json(products);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching vendor products:", err);
     res.status(500).send("Error fetching products");
   }
 };

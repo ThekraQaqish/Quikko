@@ -17,6 +17,11 @@ router.put('/deliveries/:deliveryId/reject', adminController.rejectDelivery);
 router.get('/orders', protect, authorizeRole('admin'), adminController.getAllOrders);
 
 
-router.get("/delivery-companies", adminController.listAllCompanies);
+router.get(
+  "/delivery-companies",
+  protect,
+  authorizeRole("admin"),
+  adminController.listAllCompanies
+);
 
 module.exports = router;

@@ -19,6 +19,6 @@ const saveToFirebase = async (message) => {
     created_at: message.created_at
   });
 };
-module.exports = { db, saveToFirebase };
 
-
+// ✅ صدّر admin نفسه عشان auth() يكون متاح
+module.exports = { admin, db, saveToFirebase };
