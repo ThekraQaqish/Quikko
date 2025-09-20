@@ -38,7 +38,7 @@ exports.fetchStoreDetails = async function (req, res) {
       return res.status(400).json({ error: "Invalid store ID" });
     }
 
-    const store = await customer.getStoreById(storeId);
+    const store = await customerModel.getStoreById(storeId);
 
     if (!store) {
       return res.status(404).json({ error: "Store not found" });
@@ -54,33 +54,40 @@ exports.fetchStoreDetails = async function (req, res) {
   }
 };
 
-
-exports.postOrder = async function (req, res) {
+// Place order endpoint
+exports.postOrderFromCart = async function (req, res) {
   try {
-    const userId = req.user.id; 
-    const { items, address } = req.body;
+    const userId = req.user.id; // من authMiddleware
+    const { cart_id, address } = req.body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!cart_id || typeof cart_id !== "number") {
+      return res.status(400).json({ error: "cart_id must be a valid number" });
+    }
+
+    if (!address || !address.address_line1 || !address.city) {
       return res
         .status(400)
-        .json({ error: "Order must have at least one item" });
+        .json({
+          error: "Address must include at least address_line1 and city",
+        });
     }
 
-    if (!address) {
-      return res.status(400).json({ error: "Shipping address is required" });
-    }
-
-    const order = await customer.placeOrder(userId, { items, address });
+    const order = await customerModel.placeOrderFromCart(
+      userId,
+      cart_id,
+      address
+    );
 
     res.status(201).json({
       message: "Order placed successfully (COD)",
       order,
     });
   } catch (err) {
-    console.error("Error placing order:", err.message);
+    console.error("Error placing order from cart:", err.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 exports.getOrderDetails = async function (req, res) {
   try {
@@ -90,7 +97,7 @@ exports.getOrderDetails = async function (req, res) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
 
-    const order = await customer.getOrderById(customerId, orderId);
+    const order = await customerModel.getOrderById(customerId, orderId);
 
     if (!order) {
       return res
@@ -113,7 +120,7 @@ exports.trackOrder = async function (req, res) {
     const customerId = req.user.id; 
     const orderId = req.params.orderId;
 
-    const order = await customer.trackOrder(orderId, customerId);
+    const order = await customerModel.trackOrder(orderId, customerId);
 
     if (!order) {
       return res
@@ -131,6 +138,8 @@ exports.trackOrder = async function (req, res) {
   }
 };
 
+
+// Get all carts
 exports.getAllCarts = async (req, res) => {
   try {
     const carts = await customerService.getAllCarts();

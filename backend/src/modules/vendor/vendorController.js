@@ -12,13 +12,9 @@ exports.getVendors = async (req, res) => {
 
 exports.getVendorReport = async (req, res) => {
   try {
-    const { vendorId } = req.params;
+    const userId = req.user.id; // من التوكن
 
-    if (isNaN(vendorId)) {
-      return res.status(400).json({ error: "Invalid vendorId" });
-    }
-
-    const report = await vendorModel.getVendorReport(vendorId);
+    const report = await vendorModel.getVendorReport(userId);
 
     if (!report) {
       return res
@@ -36,6 +32,8 @@ exports.getVendorReport = async (req, res) => {
   }
 };
 
+
+// Get vendor orders
 exports.getOrders = async (req, res) => {
     try {
     const userId = req.user.id;
@@ -69,11 +67,17 @@ exports.updateOrderStatus = async (req, res) => {
 };
 exports.getProducts = async (req, res) => {
   try {
-    const vendorId = req.user.id; 
-    const products = await vendorModel.getVendorProducts(vendorId);
+    const userId = req.user.id;
+
+    const vendor = await vendorModel.getVendorByUserId(userId);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    const products = await vendorModel.getVendorProducts(vendor.id);
+ 
     res.json(products);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching vendor products:", err);
     res.status(500).send("Error fetching products");
   }
 };

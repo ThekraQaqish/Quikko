@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
+const customerController = require("./customerController");
+const { protect } = require("../../middleware/authMiddleware");
 const router = express.Router();
-const customerController = require('./customerController');
-const { protect } = require('../../middleware/authMiddleware');
 const { getAllProductsValidator } = require("./customerValidators");
 
 
@@ -11,7 +11,6 @@ router.get("/stores/:storeId", customerController.fetchStoreDetails);
 router.post("/checkout", protect, customerController.postOrder);
 router.get("/orders/:orderId", protect, customerController.getOrderDetails);
 router.get("/orders/:orderId/track", protect, customerController.trackOrder);
-
 
 // Carts
 router.get("/cart", protect, customerController.getAllCarts); 
@@ -24,7 +23,6 @@ router.delete("/cart/:id", protect, customerController.deleteCart);
 router.post("/cart/items", protect, customerController.addItem);
 router.put("/cart/items/:id", protect, customerController.updateItem); 
 router.delete("/cart/items/:id", protect, customerController.deleteItem); 
-
 
 // Get All Products in customer page
 router.get("/products", getAllProductsValidator, customerController.getAllProducts);
