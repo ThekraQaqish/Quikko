@@ -51,13 +51,6 @@ const ALLOWED_STATUSES = [
   "cancelled",
 ];
 
-async function updateStatus(req, res) {
-  const id = parseInt(req.params.id, 10);
-  const { status, company_id } = req.body;
-
-  if (Number.isNaN(id) || id <= 0) {
-    return res.status(400).json({ error: "Invalid order id" });
-  }
 exports.updateOrderStatus = async function (req, res) {
   try {
     const orderId = parseInt(req.params.id, 10);

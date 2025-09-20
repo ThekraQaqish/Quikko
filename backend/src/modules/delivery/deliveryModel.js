@@ -48,8 +48,6 @@ exports.updateStatus = async function (orderId, status) {
   );
   return result.rows[0];
 };
-
-async function getOrderById(orderId) {
 //tracking info for the order
 exports.getOrderById = async function (orderId) {
   const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [
