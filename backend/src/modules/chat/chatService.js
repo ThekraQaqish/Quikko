@@ -1,25 +1,44 @@
-const pool = require('../../config/db');
+// src/modules/chat/chatService.js
+const ChatModel = require('./chatModel');
 const { saveToFirebase } = require('../../infrastructure/firebase');
 
-const getMessages = async (user1, user2) => {
-  const { rows } = await pool.query(
-    `SELECT * FROM chat_messages
-     WHERE (sender_id=$1 AND receiver_id=$2)
-        OR (sender_id=$2 AND receiver_id=$1)
-     ORDER BY created_at ASC`,
-    [user1, user2]
-  );
-  return rows;
+/**
+ * @module ChatService
+ * @desc Handles business logic for chat messages, integrating database operations with Firebase real-time updates.
+ */
+
+/**
+ * @function getMessages
+ * @desc Retrieves all chat messages between two users.
+ *
+ * @param {string|number} user1 - ID of the first user
+ * @param {string|number} user2 - ID of the second user
+ * @returns {Promise<Array<Object>>} Array of chat message objects
+ *
+ * @example
+ * const messages = await ChatService.getMessages(1, 2);
+ * console.log(messages);
+ */
+exports.getMessages = async (user1, user2) => {
+  return await ChatModel.getAllMessages(user1, user2);
 };
 
-const sendMessage = async (sender_id, receiver_id, message) => {
-  const { rows } = await pool.query(
-    `INSERT INTO chat_messages (sender_id, receiver_id, message) 
-     VALUES ($1, $2, $3) RETURNING *`,
-    [sender_id, receiver_id, message]
-  );
-  await saveToFirebase(rows[0]); // real-time update in Firebase
-  return rows[0];
+/**
+ * @function sendMessage
+ * @desc Sends a new chat message from one user to another.
+ *       Saves it in PostgreSQL and triggers a Firebase real-time update.
+ *
+ * @param {string|number} sender_id - ID of the sender
+ * @param {string|number} receiver_id - ID of the receiver
+ * @param {string} message - Message content
+ * @returns {Promise<Object>} The newly created chat message object
+ *
+ * @example
+ * const newMessage = await ChatService.sendMessage(1, 2, "Hello!");
+ * console.log(newMessage);
+ */
+exports.sendMessage = async (sender_id, receiver_id, message) => {
+  const chatMessage = await ChatModel.createMessage(sender_id, receiver_id, message);
+  await saveToFirebase(chatMessage); // Trigger real-time update in Firebase
+  return chatMessage;
 };
-
-module.exports = { getMessages, sendMessage };

@@ -2,22 +2,97 @@
 const express = require("express");
 const router = express.Router();
 const DeliveryController = require("./deliveryController");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect, authorizeRole }  = require("../../middleware/authMiddleware");
 
-router.get("/profile/", protect, DeliveryController.getCompanyProfile);
-router.put("/profile", protect, DeliveryController.updateCompanyProfile);
+/**
+ * @route   GET /profile
+ * @desc    Get the authenticated delivery company's profile
+ * @access  Private (requires auth)
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.getCompanyProfile
+ */
+router.get("/profile/", protect,authorizeRole('delivery'), DeliveryController.getCompanyProfile);
 
-router.put("/orders/:id", protect, DeliveryController.updateOrderStatus);
-router.get("/tracking/:orderId", protect, DeliveryController.getTrackingInfo);
+/**
+ * @route   PUT /profile
+ * @desc    Update the authenticated delivery company's profile
+ * @access  Private (requires auth)
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.updateCompanyProfile
+ */
+router.put("/profile", protect,authorizeRole('delivery'), DeliveryController.updateCompanyProfile);
 
-router.get("/orders", protect, DeliveryController.listCompanyOrders);
+/**
+ * @route   PUT /orders/:id
+ * @desc    Update the status of a specific order by order ID
+ * @access  Private (requires auth)
+ * @params  id - Order ID (URL param)
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.updateOrderStatus
+ */
+router.put("/orders/:id", protect,authorizeRole('delivery'), DeliveryController.updateOrderStatus);
 
-router.get("/coverage", protect, DeliveryController.getCoverage);
-router.post("/coverage", protect, DeliveryController.addCoverage);
-router.put("/coverage/:id", protect, DeliveryController.updateCoverage);
-router.delete("/coverage/:id", protect, DeliveryController.deleteCoverage);
+/**
+ * @route   GET /tracking/:orderId
+ * @desc    Get tracking information for a specific order
+ * @access  Private (requires auth)
+ * @params  orderId - Order ID (URL param)
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.getTrackingInfo
+ */
+router.get("/tracking/:orderId",authorizeRole('delivery'), protect, DeliveryController.getTrackingInfo);
+
+/**
+ * @route   GET /orders
+ * @desc    List all orders for the authenticated delivery company
+ * @access  Private (requires auth)
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.listCompanyOrders
+ */
+router.get("/orders", protect,authorizeRole('delivery'), DeliveryController.listCompanyOrders);
+
+/**
+ * @route   GET /coverage
+ * @desc    Get coverage areas for the authenticated delivery company
+ * @access  Private (requires auth)
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.getCoverage
+ */
+router.get("/coverage", protect,authorizeRole('delivery'), DeliveryController.getCoverage);
+
+/**
+ * @route   POST /coverage
+ * @desc    Add new coverage areas for the authenticated delivery company
+ * @access  Private (requires auth)
+ * @body    { areas: Array<string> } - List of areas to add
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.addCoverage
+ */
+router.post("/coverage", protect,authorizeRole('delivery'), DeliveryController.addCoverage);
+
+/**
+ * @route   PUT /coverage/:id
+ * @desc    Update a specific coverage area for the authenticated delivery company
+ * @access  Private (requires auth)
+ * @params  id - Coverage ID (URL param)
+ * @body    Object - Coverage update payload
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.updateCoverage
+ */
+router.put("/coverage/:id", protect,authorizeRole('delivery'), DeliveryController.updateCoverage);
+
+/**
+ * @route   DELETE /coverage/:id
+ * @desc    Delete a specific coverage area for the authenticated delivery company
+ * @access  Private (requires auth)
+ * @params  id - Coverage ID (URL param)
+ * @middleware protect - checks JWT token
+ * @controller DeliveryController.deleteCoverage
+ */
+router.delete("/coverage/:id", protect,authorizeRole('delivery'), DeliveryController.deleteCoverage);
 
 module.exports = router;
+
 /* =================== Swagger Documentation =================== */
 
 /**

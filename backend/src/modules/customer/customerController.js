@@ -2,6 +2,19 @@ const customerService = require("./customerService");
 const customerModel = require("./customerModel");
 const { validationResult } = require("express-validator");
 
+/**
+ * @module CustomerController
+ * @desc Controller handling customer-related endpoints including profile, store details,
+ *       orders, carts, cart items, and products.
+ */
+
+/**
+ * @function getProfile
+ * @desc Fetch the profile of the authenticated customer.
+ * @route GET /api/customer/profile
+ * @access Private
+ * @returns {Object} Customer profile
+ */
 exports.getProfile = async (req, res) => {
   try {
     const user_id = req.user.id;
@@ -13,16 +26,21 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+/**
+ * @function updateProfile
+ * @desc Update the profile of the authenticated customer.
+ * @route PUT /api/customer/profile
+ * @access Private
+ * @body {string} name - Customer name
+ * @body {string} phone - Customer phone
+ * @body {string} address - Customer address
+ * @returns {Object} Updated profile
+ */
 exports.updateProfile = async (req, res) => {
   try {
     const user_id = req.user.id;
     const { name, phone, address } = req.body;
-    const updatedProfile = await customerModel.updateById(
-      user_id,
-      name,
-      phone,
-      address
-    );
+    const updatedProfile = await customerModel.updateById(user_id, name, phone, address);
     res.json(updatedProfile);
   } catch (err) {
     console.error(err);
@@ -30,6 +48,14 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+/**
+ * @function fetchStoreDetails
+ * @desc Get details of a specific store by its ID.
+ * @route GET /api/customer/store/:storeId
+ * @access Public
+ * @param {number} storeId - ID of the store
+ * @returns {Object} Store details
+ */
 exports.fetchStoreDetails = async function (req, res) {
   try {
     const { storeId } = req.params;
@@ -54,10 +80,18 @@ exports.fetchStoreDetails = async function (req, res) {
   }
 };
 
-// Place order endpoint
+/**
+ * @function postOrderFromCart
+ * @desc Place an order from the customer's cart (Cash on Delivery).
+ * @route POST /api/customer/orders
+ * @access Private
+ * @body {number} cart_id - Cart ID
+ * @body {Object} address - Address object with address_line1 and city
+ * @returns {Object} Order details
+ */
 exports.postOrderFromCart = async function (req, res) {
   try {
-    const userId = req.user.id; // من authMiddleware
+    const userId = req.user.id;
     const { cart_id, address } = req.body;
 
     if (!cart_id || typeof cart_id !== "number") {
@@ -65,18 +99,12 @@ exports.postOrderFromCart = async function (req, res) {
     }
 
     if (!address || !address.address_line1 || !address.city) {
-      return res
-        .status(400)
-        .json({
-          error: "Address must include at least address_line1 and city",
-        });
+      return res.status(400).json({
+        error: "Address must include at least address_line1 and city",
+      });
     }
 
-    const order = await customerModel.placeOrderFromCart(
-      userId,
-      cart_id,
-      address
-    );
+    const order = await customerModel.placeOrderFromCart(userId, cart_id, address);
 
     res.status(201).json({
       message: "Order placed successfully (COD)",
@@ -88,11 +116,19 @@ exports.postOrderFromCart = async function (req, res) {
   }
 };
 
-
+/**
+ * @function getOrderDetails
+ * @desc Get details of a specific order for the authenticated customer.
+ * @route GET /api/customer/orders/:orderId
+ * @access Private
+ * @param {number} orderId - Order ID
+ * @returns {Object} Order details
+ */
 exports.getOrderDetails = async function (req, res) {
   try {
-    const customerId = req.user.id; 
+    const customerId = req.user.id;
     const { orderId } = req.params;
+
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
     }
@@ -100,9 +136,7 @@ exports.getOrderDetails = async function (req, res) {
     const order = await customerModel.getOrderById(customerId, orderId);
 
     if (!order) {
-      return res
-        .status(403)
-        .json({ error: "You do not have access to this order" });
+      return res.status(403).json({ error: "You do not have access to this order" });
     }
 
     res.json({
@@ -115,17 +149,23 @@ exports.getOrderDetails = async function (req, res) {
   }
 };
 
+/**
+ * @function trackOrder
+ * @desc Track status of a specific order.
+ * @route GET /api/customer/orders/:orderId/track
+ * @access Private
+ * @param {number} orderId - Order ID
+ * @returns {Object} Order status
+ */
 exports.trackOrder = async function (req, res) {
   try {
-    const customerId = req.user.id; 
+    const customerId = req.user.id;
     const orderId = req.params.orderId;
 
     const order = await customerModel.trackOrder(orderId, customerId);
 
     if (!order) {
-      return res
-        .status(404)
-        .json({ error: "Order not found or not authorized" });
+      return res.status(404).json({ error: "Order not found or not authorized" });
     }
 
     res.json({
@@ -138,8 +178,13 @@ exports.trackOrder = async function (req, res) {
   }
 };
 
-
-// Get all carts
+/**
+ * @function getAllCarts
+ * @desc Retrieve all carts for the authenticated customer.
+ * @route GET /api/customer/carts
+ * @access Private
+ * @returns {Array} List of carts
+ */
 exports.getAllCarts = async (req, res) => {
   try {
     const carts = await customerService.getAllCarts();
@@ -150,6 +195,14 @@ exports.getAllCarts = async (req, res) => {
   }
 };
 
+/**
+ * @function getCartById
+ * @desc Retrieve a specific cart by ID.
+ * @route GET /api/customer/carts/:id
+ * @access Private
+ * @param {number} id - Cart ID
+ * @returns {Object} Cart details
+ */
 exports.getCartById = async (req, res) => {
   try {
     const cart = await customerService.getCartById(req.params.id);
@@ -161,6 +214,13 @@ exports.getCartById = async (req, res) => {
   }
 };
 
+/**
+ * @function createCart
+ * @desc Create a new cart for the authenticated customer.
+ * @route POST /api/customer/carts
+ * @access Private
+ * @returns {Object} Created cart
+ */
 exports.createCart = async (req, res) => {
   try {
     const cart = await customerService.createCart(req.user.id);
@@ -171,6 +231,14 @@ exports.createCart = async (req, res) => {
   }
 };
 
+/**
+ * @function updateCart
+ * @desc Update a specific cart by ID.
+ * @route PUT /api/customer/carts/:id
+ * @access Private
+ * @body {number} user_id - Customer ID
+ * @returns {Object} Updated cart
+ */
 exports.updateCart = async (req, res) => {
   try {
     const { user_id } = req.body;
@@ -183,6 +251,13 @@ exports.updateCart = async (req, res) => {
   }
 };
 
+/**
+ * @function deleteCart
+ * @desc Delete a specific cart by ID.
+ * @route DELETE /api/customer/carts/:id
+ * @access Private
+ * @returns {Object} Success message
+ */
 exports.deleteCart = async (req, res) => {
   try {
     const cart = await customerService.deleteCart(req.params.id);
@@ -194,6 +269,17 @@ exports.deleteCart = async (req, res) => {
   }
 };
 
+/**
+ * @function addItem
+ * @desc Add an item to a cart.
+ * @route POST /api/customer/cart-items
+ * @access Private
+ * @body {number} cart_id
+ * @body {number} product_id
+ * @body {number} quantity
+ * @body {string} [variant]
+ * @returns {Object} Added item
+ */
 exports.addItem = async (req, res) => {
   try {
     const { cart_id, product_id, quantity, variant } = req.body;
@@ -205,6 +291,15 @@ exports.addItem = async (req, res) => {
   }
 };
 
+/**
+ * @function updateItem
+ * @desc Update an item in the cart.
+ * @route PUT /api/customer/cart-items/:id
+ * @access Private
+ * @body {number} quantity
+ * @body {string} [variant]
+ * @returns {Object} Updated item
+ */
 exports.updateItem = async (req, res) => {
   try {
     const { quantity, variant } = req.body;
@@ -217,6 +312,13 @@ exports.updateItem = async (req, res) => {
   }
 };
 
+/**
+ * @function deleteItem
+ * @desc Delete an item from the cart.
+ * @route DELETE /api/customer/cart-items/:id
+ * @access Private
+ * @returns {Object} Success message
+ */
 exports.deleteItem = async (req, res) => {
   try {
     const item = await customerService.deleteItem(req.params.id);
@@ -228,7 +330,17 @@ exports.deleteItem = async (req, res) => {
   }
 };
 
-
+/**
+ * @function getAllProducts
+ * @desc Get all products with optional filters, pagination, and search.
+ * @route GET /api/customer/products
+ * @access Public
+ * @query {string} [search] - Search term
+ * @query {number} [categoryId] - Category ID
+ * @query {number} [page=1] - Page number
+ * @query {number} [limit=10] - Items per page
+ * @returns {Object} Products list with pagination info
+ */
 exports.getAllProducts = async (req, res) => {
   try {
     const { search, categoryId, page = 1, limit = 10 } = req.query;
@@ -245,5 +357,55 @@ exports.getAllProducts = async (req, res) => {
   } catch (err) {
     console.error("Get products error:", err);
     res.status(500).json({ message: "Error getting products" });
+  }
+};
+
+
+/**
+ * @function getOrders
+ * @async
+ * @desc Fetch all orders for the authenticated customer.
+ *       Requires a valid JWT token (user info available on req.user).
+ * @param {Object} req - Express request object
+ * @param {Object} req.user - Authenticated user object from auth middleware
+ * @param {number} req.user.id - ID of the authenticated customer
+ * @param {Object} res - Express response object
+ * @returns {JSON} - Array of orders or an error message
+ * 
+ * @example
+ * // Response when orders exist
+ * [
+ *   {
+ *     id: 1,
+ *     customer_id: 5,
+ *     total_amount: 150,
+ *     status: "pending",
+ *     payment_status: "unpaid",
+ *     shipping_address: "Amman, Jordan",
+ *     created_at: "2025-09-20T12:00:00Z",
+ *     updated_at: "2025-09-20T12:00:00Z",
+ *     items: [
+ *       { product_id: 10, name: "Product A", quantity: 2, price: 50 }
+ *     ]
+ *   }
+ * ]
+ *
+ * @example
+ * // Response when no orders found
+ * { message: "No orders found" }
+ */
+exports.getOrders  = async (req, res) => {
+  try {
+    const customer_id = req.user.id; 
+    const orders = await orderModel.getCustomerOrders(customer_id);
+
+    if (!orders.length) {
+      return res.status(404).json({ message: 'No orders found' });
+    }
+
+    res.json(orders);
+  } catch (err) {
+    console.error('Error fetching orders:', err);
+    res.status(500).json({ error: 'Error fetching orders' });
   }
 };

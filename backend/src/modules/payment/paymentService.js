@@ -1,6 +1,27 @@
 const paypal = require("../../infrastructure/payment/paypal");
 
-const createPayment = async (amount) => {
+/**
+ * @module PayPalService
+ * @desc Service for creating and executing payments using PayPal API.
+ */
+
+/**
+ * Create a PayPal payment.
+ *
+ * @async
+ * @function createPayment
+ * @param {number} amount - The amount to be paid in USD.
+ * @returns {Promise<Object>} Returns a promise that resolves with an object containing:
+ *   - {string} id - The PayPal payment ID.
+ *   - {string} forwardLink - The URL where the user should be redirected to approve the payment.
+ *
+ * @throws {Error} Throws an error if PayPal API call fails.
+ *
+ * @example
+ * const { id, forwardLink } = await createPayment(50.00);
+ * console.log(id, forwardLink);
+ */
+exports.createPayment = async (amount) => {
   const create_payment_json = {
     intent: "sale",
     payer: { payment_method: "paypal" },
@@ -41,7 +62,23 @@ const createPayment = async (amount) => {
   });
 };
 
-const executePayment = async (paymentId, payerId, amount) => {
+/**
+ * Execute a PayPal payment after the payer approves it.
+ *
+ * @async
+ * @function executePayment
+ * @param {string} paymentId - The PayPal payment ID.
+ * @param {string} payerId - The PayPal Payer ID.
+ * @param {number} amount - The amount to execute in USD.
+ * @returns {Promise<Object>} Returns a promise that resolves with the executed payment object from PayPal.
+ *
+ * @throws {Error} Throws an error if PayPal API call fails.
+ *
+ * @example
+ * const payment = await executePayment("PAY-12345", "PAYER-67890", 50.00);
+ * console.log(payment);
+ */
+exports.executePayment = async (paymentId, payerId, amount) => {
   const execute_payment_json = {
     payer_id: payerId,
     transactions: [
@@ -61,5 +98,3 @@ const executePayment = async (paymentId, payerId, amount) => {
     });
   });
 };
-
-module.exports = { createPayment, executePayment };

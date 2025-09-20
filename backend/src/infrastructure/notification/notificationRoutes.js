@@ -2,14 +2,38 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./notificationController");
 const { protect, authorizeRole } = require("../../middleware/authMiddleware");
+const admin = require("../firebase"); // لازم يكون موجود لاستعمال send-test
 
+/**
+ * @route POST /api/notifications
+ * @desc Send a notification to a single user or a group of users by role
+ * @access Protected (requires JWT token)
+ * @body {number} [userId] - Target user ID (optional if role is provided)
+ * @body {string} [role] - Target role (optional if userId is provided)
+ * @body {string} title - Notification title
+ * @body {string} message - Notification body/message
+ * @body {string} [type="general"] - Notification type/category
+ * @returns {object} success status and additional info (e.g., count of users notified)
+ */
+router.post("/", protect, controller.sendNotification);
 
-router.post("/",protect, controller.sendNotification);
-router.get("/",protect, controller.getNotifications);
+/**
+ * @route GET /api/notifications
+ * @desc Get all notifications for the currently logged-in user
+ * @access Protected (requires JWT token)
+ * @returns {Array} Array of notification objects
+ */
+router.get("/", protect, controller.getNotifications);
 
-
-
-//for testing but important for now
+/**
+ * @route POST /api/notifications/send-test
+ * @desc Send a test notification to a specific FCM token (for development/testing)
+ * @access Protected (requires JWT token)
+ * @body {string} fcmToken - FCM token of the target device
+ * @returns {object} success status and Firebase response or error
+ * @throws {400} Validation error if fcmToken is missing
+ * @throws {500} Server error if Firebase messaging fails
+ */
 router.post("/send-test", async (req, res) => {
   const { fcmToken } = req.body;
 
@@ -35,6 +59,7 @@ router.post("/send-test", async (req, res) => {
 });
 
 module.exports = router;
+
 
 /**
  * @swagger

@@ -1,24 +1,87 @@
 const express = require('express');
 const router = express.Router();
 const vendorController = require('./vendorController');
-const { protect } = require('../../middleware/authMiddleware');
+const { protect,authorizeRole } = require('../../middleware/authMiddleware');
 const { updateOrderStatusValidator } = require('./vendorValidators');
 
-router.get('/stores', vendorController.getVendors);
+/**
+ * ===============================
+ * Vendor Routes
+ * ===============================
+ * @module VendorRoutes
+ * @desc Routes to manage vendors, their orders, products, and profile.
+ */
 
-router.get("/reports/:vendorId", vendorController.getVendorReport);
-router.get("/reports", protect, vendorController.getVendorReport);
+/**
+ * @route GET /stores
+ * @desc Get all vendors
+ * @access Public
+ * @returns {Array<Object>} Array of vendor records
+ */
+router.get('/stores',authorizeRole('vendor'), vendorController.getVendors);
 
-// Get all orders for vendor
-router.get('/orders', protect, vendorController.getOrders);
-router.put('/orders/:id', protect, updateOrderStatusValidator, vendorController.updateOrderStatus);
-router.get("/products", protect, vendorController.getProducts);
-router.get("/profile", protect, vendorController.getProfile);
-router.put("/profile", protect, vendorController.updateProfile);
+/**
+ * @route GET /reports/:vendorId
+ * @desc Get report for a specific vendor by vendorId
+ * @access Public
+ * @param {string|number} vendorId - ID of the vendor
+ * @returns {Object} Vendor report including total orders and total sales
+ */
+router.get("/reports/:vendorId",authorizeRole('vendor'), vendorController.getVendorReport);
 
+/**
+ * @route GET /reports
+ * @desc Get report for the currently logged-in vendor
+ * @access Protected
+ * @returns {Object} Vendor report including total orders and total sales
+ */
+router.get("/reports", protect,authorizeRole('vendor'), vendorController.getVendorReport);
 
+/**
+ * @route GET /orders
+ * @desc Get all orders for the logged-in vendor
+ * @access Protected
+ * @returns {Array<Object>} Array of orders with items and product details
+ */
+router.get('/orders', protect,authorizeRole('vendor'), vendorController.getOrders);
+
+/**
+ * @route PUT /orders/:id
+ * @desc Update the status of an order for the logged-in vendor
+ * @access Protected
+ * @param {string|number} id - Order ID
+ * @body {string} status - New status for the order
+ * @returns {Object} Updated order record
+ */
+router.put('/orders/:id', protect,authorizeRole('vendor'), updateOrderStatusValidator, vendorController.updateOrderStatus);
+
+/**
+ * @route GET /products
+ * @desc Get all products of the logged-in vendor
+ * @access Protected
+ * @returns {Array<Object>} Array of product records
+ */
+router.get("/products", protect,authorizeRole('vendor'), vendorController.getProducts);
+
+/**
+ * @route GET /profile
+ * @desc Get profile of the logged-in vendor
+ * @access Protected
+ * @returns {Object} Vendor profile
+ */
+router.get("/profile", protect,authorizeRole('vendor'), vendorController.getProfile);
+
+/**
+ * @route PUT /profile
+ * @desc Update profile of the logged-in vendor
+ * @access Protected
+ * @body {Object} profileData - Vendor profile fields to update
+ * @returns {Object} Updated vendor profile
+ */
+router.put("/profile", protect,authorizeRole('vendor'), vendorController.updateProfile);
 
 module.exports = router;
+
 
 
 

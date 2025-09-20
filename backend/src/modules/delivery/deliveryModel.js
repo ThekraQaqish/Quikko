@@ -1,7 +1,18 @@
 const pool = require("../../config/db");
 
-//additional task -- get the profile for the company
-exports.getProfileByUserId = async function (userId) {
+/**
+ * @module DeliveryModel
+ * @desc Handles direct database operations for delivery companies and orders.
+ *       Responsible for executing queries without applying business logic.
+ */
+
+/**
+ * Get delivery company profile by user ID
+ * @async
+ * @param {number} userId - Authenticated user's ID
+ * @returns {Promise<Object|null>} Company profile or null if not found
+ */
+exports.getProfileByUserId = async (userId) => {
   const result = await pool.query(
     `SELECT id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at
      FROM delivery_companies
@@ -11,9 +22,17 @@ exports.getProfileByUserId = async function (userId) {
   return result.rows[0];
 };
 
-exports.updateProfileByUserId = async function (userId, data) {
+/**
+ * Update delivery company profile by user ID
+ * @async
+ * @param {number} userId - User ID
+ * @param {Object} data - Data to update
+ * @param {string} [data.company_name] - New company name
+ * @param {Array<string>} [data.coverage_areas] - Updated coverage areas
+ * @returns {Promise<Object|null>} Updated company profile or null if not found
+ */
+exports.updateProfileByUserId = async (userId, data) => {
   const { company_name, coverage_areas } = data;
-
   const result = await pool.query(
     `UPDATE delivery_companies
      SET company_name = COALESCE($1, company_name),
@@ -23,11 +42,16 @@ exports.updateProfileByUserId = async function (userId, data) {
      RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
     [company_name, coverage_areas, userId]
   );
-
   return result.rows[0];
 };
-// Get order joined with delivery company
-exports.getOrderWithCompany = async function (orderId) {
+
+/**
+ * Get order with delivery company info
+ * @async
+ * @param {number} orderId - Order ID
+ * @returns {Promise<Object|null>} Order joined with company info or null
+ */
+exports.getOrderWithCompany = async (orderId) => {
   const result = await pool.query(
     `SELECT o.*, dc.id AS company_id, dc.company_name
      FROM orders o
@@ -38,7 +62,14 @@ exports.getOrderWithCompany = async function (orderId) {
   return result.rows[0];
 };
 
-exports.updateStatus = async function (orderId, status) {
+/**
+ * Update order status
+ * @async
+ * @param {number} orderId - Order ID
+ * @param {string} status - New order status
+ * @returns {Promise<Object|null>} Updated order or null
+ */
+exports.updateStatus = async (orderId, status) => {
   const result = await pool.query(
     `UPDATE orders
      SET status = $1, updated_at = CURRENT_TIMESTAMP
@@ -48,14 +79,25 @@ exports.updateStatus = async function (orderId, status) {
   );
   return result.rows[0];
 };
-//tracking info for the order
-exports.getOrderById = async function (orderId) {
-  const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [
-    orderId,
-  ]);
+
+/**
+ * Get order by ID
+ * @async
+ * @param {number} orderId - Order ID
+ * @returns {Promise<Object|null>} Order or null
+ */
+exports.getOrderById = async (orderId) => {
+  const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [orderId]);
   return result.rows[0];
 };
-exports.getCompanyByUserId = async function (userId) {
+
+/**
+ * Get company by user ID
+ * @async
+ * @param {number} userId - User ID
+ * @returns {Promise<Object|null>} Company info or null
+ */
+exports.getCompanyByUserId = async (userId) => {
   const result = await pool.query(
     `SELECT id AS company_id, user_id, company_name
      FROM delivery_companies
@@ -65,16 +107,27 @@ exports.getCompanyByUserId = async function (userId) {
   return result.rows[0];
 };
 
-exports.getCompany = async function (userId) {
+/**
+ * Get company ID by user ID
+ * @async
+ * @param {number} userId - User ID
+ * @returns {Promise<number|null>} Company ID or null
+ */
+exports.getCompany = async (userId) => {
   const result = await pool.query(
     `SELECT id AS company_id FROM delivery_companies WHERE user_id = $1`,
     [userId]
   );
-  // استخرج فقط company_id كرقم
   return result.rows[0]?.company_id || null;
 };
 
-exports.getOrdersByCompanyId = async function (companyId) {
+/**
+ * Get all orders for a company
+ * @async
+ * @param {number} companyId - Company ID
+ * @returns {Promise<Array>} List of orders
+ */
+exports.getOrdersByCompanyId = async (companyId) => {
   const result = await pool.query(
     `SELECT id, customer_id, total_amount, status, payment_status, shipping_address, created_at, updated_at
      FROM orders
@@ -85,8 +138,13 @@ exports.getOrdersByCompanyId = async function (companyId) {
   return result.rows;
 };
 
-//get coverage area for specific company
-exports.getCoverageById = async function (userId) {
+/**
+ * Get coverage by user ID
+ * @async
+ * @param {number} userId - User ID
+ * @returns {Promise<Object|null>} Company coverage info or null
+ */
+exports.getCoverageById = async (userId) => {
   const result = await pool.query(
     `SELECT id AS company_id, company_name, coverage_areas 
      FROM delivery_companies 
@@ -96,42 +154,35 @@ exports.getCoverageById = async function (userId) {
   return result.rows[0];
 };
 
-exports.addCoverage = async function (userId, newAreas) {
-  // newAreas: مصفوفة جديدة ["Amman", "Irbid"]
+/**
+ * Add coverage areas
+ * @async
+ * @param {number} userId - User ID
+ * @param {Array<string>} mergedAreas - Coverage areas to save
+ * @returns {Promise<Object|null>} Updated company info or null
+ */
+exports.addCoverage = async (userId, mergedAreas) => {
   const result = await pool.query(
-    `SELECT id, coverage_areas
-     FROM delivery_companies
-     WHERE user_id = $1`,
-    [userId]
-  );
-
-  if (result.rows.length === 0) return null;
-
-  const companyId = result.rows[0].id;
-  const currentAreas = result.rows[0].coverage_areas?.areas || [];
-
-  const mergedAreas = Array.from(new Set([...currentAreas, ...newAreas]));
-
-  const updateResult = await pool.query(
     `UPDATE delivery_companies
-   SET coverage_areas = $1,
-       updated_at = CURRENT_TIMESTAMP
-   WHERE user_id = $2
-   RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
-    [mergedAreas, userId] // mergedAreas مصفوفة من النصوص
+     SET coverage_areas = $1,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE user_id = $2
+     RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
+    [mergedAreas, userId]
   );
-
-  return updateResult.rows[0];
+  return result.rows[0];
 };
 
-// Update coverage area
-exports.updateCoverage = async (id, user_id, coverageAreaData) => {
-  const {
-    company_name,
-    status,
-    coverage_areas,
-  } = coverageAreaData;
-
+/**
+ * Update coverage
+ * @async
+ * @param {number} id - Company ID
+ * @param {number} user_id - User ID
+ * @param {Object} data - { company_name, coverage_areas }
+ * @returns {Promise<Object|null>} Updated company info or null
+ */
+exports.updateCoverage = async (id, user_id, data) => {
+  const { company_name, coverage_areas } = data;
   const query = `
     UPDATE delivery_companies
     SET company_name = $1,
@@ -140,21 +191,21 @@ exports.updateCoverage = async (id, user_id, coverageAreaData) => {
     WHERE id = $3 AND user_id = $4
     RETURNING *;
   `;
-
-  const values = [
-    company_name,
-    status,
-    coverage_areas,
-    id,
-    user_id
-  ];
-
+  const values = [company_name, coverage_areas, id, user_id];
   const result = await pool.query(query, values);
   return result.rows[0];
 };
 
-// Delete coverage area
+/**
+ * Delete coverage
+ * @async
+ * @param {number} id - Company ID
+ * @param {number} user_id - User ID
+ * @returns {Promise<void>}
+ */
 exports.deleteCoverage = async (id, user_id) => {
-  const query = `DELETE FROM delivery_companies WHERE id = $1 AND user_id = $2 RETURNING *;`;
-  await pool.query(query, [id, user_id]);
+  await pool.query(
+    `DELETE FROM delivery_companies WHERE id = $1 AND user_id = $2`,
+    [id, user_id]
+  );
 };

@@ -1,12 +1,61 @@
 const express = require("express");
 const router = express.Router();
 const paymentController = require("./paymentController");
+const { protect }  = require("../../middleware/authMiddleware");
 
-router.post("/pay", paymentController.createPayment);
-router.get("/success", paymentController.executePayment);
-router.get("/cancel", paymentController.cancelPayment);
+/**
+ * @module PaymentRoutes
+ * @desc Routes for handling payment operations including creating, executing, and canceling payments.
+ */
+
+/**
+ * @route POST /api/payment/pay
+ * @desc Initiate a new payment request.
+ * @access Public (or Protected depending on auth middleware)
+ * @body {Object} req.body
+ * @body {number} req.body.amount - Amount to be paid
+ * @returns {Object} JSON object with payment details
+ *
+ * @example
+ * POST /api/payment/pay
+ * {
+ *   "amount": 50.00
+ * }
+ */
+router.post("/pay",protect, paymentController.createPayment);
+
+/**
+ * @route GET /api/payment/success
+ * @desc Execute a successful payment after payer confirmation.
+ * @access Public (or Protected depending on auth middleware)
+ * @query {string} paymentId - Payment ID returned by payment gateway
+ * @query {string} PayerID - Payer ID returned by payment gateway
+ * @returns {Object} JSON object with payment status and details
+ *
+ * @example
+ * GET /api/payment/success?paymentId=PAY123&PayerID=PAYER123
+ * Response:
+ * {
+ *   "status": "success",
+ *   "payment": { ...paymentDetails }
+ * }
+ */
+router.get("/success",protect, paymentController.executePayment);
+
+/**
+ * @route GET /api/payment/cancel
+ * @desc Handle payment cancellation by user or gateway.
+ * @access Public
+ * @returns {string} Simple text response confirming cancellation
+ *
+ * @example
+ * GET /api/payment/cancel
+ * Response: "Payment canceled"
+ */
+router.get("/cancel",protect, paymentController.cancelPayment);
 
 module.exports = router;
+
 
 
 /* =================== Swagger Documentation =================== */

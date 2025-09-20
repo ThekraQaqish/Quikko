@@ -1,33 +1,249 @@
 const express = require("express");
 const customerController = require("./customerController");
-const { protect } = require("../../middleware/authMiddleware");
-const router = express.Router();
+const { protect,authorizeRole } = require("../../middleware/authMiddleware");
 const { getAllProductsValidator } = require("./customerValidators");
+const router = express.Router();
 
+/**
+ * @route GET /api/customer/
+ * @desc Get the authenticated customer's profile
+ * @access Private
+ */
+router.get('/', protect,authorizeRole('customer'),  customerController.getProfile);
 
-router.get('/', protect, customerController.getProfile);
-router.put('/', protect, customerController.updateProfile);
-router.get("/stores/:storeId", customerController.fetchStoreDetails);
-router.post("/checkout", protect, customerController.postOrder);
-router.get("/orders/:orderId", protect, customerController.getOrderDetails);
-router.get("/orders/:orderId/track", protect, customerController.trackOrder);
+/**
+ * @route PUT /api/customer/
+ * @desc Update the authenticated customer's profile
+ * @access Private
+ */
+router.put('/', protect,authorizeRole('customer'),  customerController.updateProfile);
 
-// Carts
-router.get("/cart", protect, customerController.getAllCarts); 
-router.get("/cart/:id", protect, customerController.getCartById);
-router.post("/cart", protect, customerController.createCart); 
-router.put("/cart/:id", protect, customerController.updateCart); 
-router.delete("/cart/:id", protect, customerController.deleteCart); 
+/**
+ * @route GET /api/customer/stores/:storeId
+ * @desc Get details of a specific store by ID
+ * @access Public
+ * @param {number} storeId - Store ID
+ */
+router.get("/stores/:storeId",  customerController.fetchStoreDetails);
 
-// Items
-router.post("/cart/items", protect, customerController.addItem);
-router.put("/cart/items/:id", protect, customerController.updateItem); 
-router.delete("/cart/items/:id", protect, customerController.deleteItem); 
+/**
+ * @route POST /api/customer/checkout
+ * @desc Place an order from the authenticated customer's cart (Cash on Delivery)
+ * @access Private
+ */
+router.post("/checkout", protect,authorizeRole('customer'),  customerController.postOrderFromCart);
 
-// Get All Products in customer page
+/**
+ * @route GET /api/customer/orders/:orderId
+ * @desc Get details of a specific order for the authenticated customer
+ * @access Private
+ * @param {number} orderId - Order ID
+ */
+router.get("/orders/:orderId", protect,authorizeRole('customer'), customerController.getOrderDetails);
+
+/**
+ * @route GET /api/customer/orders/:orderId/track
+ * @desc Track the status of a specific order
+ * @access Private
+ * @param {number} orderId - Order ID
+ */
+router.get("/orders/:orderId/track", protect,authorizeRole('customer'),  customerController.trackOrder);
+
+/**
+ * @route GET /api/customer/cart
+ * @desc Get all carts for the authenticated customer
+ * @access Private
+ */
+router.get("/cart", customerController.getAllCarts); 
+
+/**
+ * @route GET /api/customer/cart/:id
+ * @desc Get a specific cart by ID
+ * @access Private
+ * @param {number} id - Cart ID
+ */
+router.get("/cart/:id", customerController.getCartById);
+
+/**
+ * @route POST /api/customer/cart
+ * @desc Create a new cart for the authenticated customer
+ * @access Private
+ */
+router.post("/cart", customerController.createCart); 
+
+/**
+ * @route PUT /api/customer/cart/:id
+ * @desc Update a specific cart by ID
+ * @access Private
+ * @param {number} id - Cart ID
+ */
+router.put("/cart/:id",  customerController.updateCart); 
+
+/**
+ * @route DELETE /api/customer/cart/:id
+ * @desc Delete a specific cart by ID
+ * @access Private
+ * @param {number} id - Cart ID
+ */
+router.delete("/cart/:id",  customerController.deleteCart); 
+
+/**
+ * @route POST /api/customer/cart/items
+ * @desc Add an item to a cart
+ * @access Private
+ * @body {number} cart_id
+ * @body {number} product_id
+ * @body {number} quantity
+ * @body {string} [variant]
+ */
+router.post("/cart/items", customerController.addItem);
+
+/**
+ * @route PUT /api/customer/cart/items/:id
+ * @desc Update an item in the cart
+ * @access Private
+ * @param {number} id - Item ID
+ * @body {number} quantity
+ * @body {string} [variant]
+ */
+router.put("/cart/items/:id",  customerController.updateItem); 
+
+/**
+ * @route DELETE /api/customer/cart/items/:id
+ * @desc Delete an item from the cart
+ * @access Private
+ * @param {number} id - Item ID
+ */
+router.delete("/cart/items/:id",  customerController.deleteItem); 
+
+/**
+ * @route GET /api/customer/products
+ * @desc Get all products with optional filters, pagination, and search
+ * @access Public
+ * @query {string} [search] - Search term
+ * @query {number} [categoryId] - Category ID
+ * @query {number} [page=1] - Page number
+ * @query {number} [limit=10] - Items per page
+ */
 router.get("/products", getAllProductsValidator, customerController.getAllProducts);
+/**
+ * @module OrdersRoutes
+ * @desc Routes for customer order management. 
+ *       All routes require authentication via JWT token.
+ */
+
+/**
+ * @route GET /api/orders
+ * @desc Retrieve all orders for the currently authenticated customer.
+ * @access Protected (requires JWT token)
+ * @middleware protect - Validates JWT and attaches user info to req.user
+ * @returns {Array<Object>} 200 - Array of order objects. Each object contains:
+ *   - id {number} - Order ID
+ *   - total_amount {number} - Total amount for the order
+ *   - status {string} - Order status (pending, processing, delivered, etc.)
+ *   - payment_status {string} - Payment status (paid/unpaid)
+ *   - shipping_address {string} - Shipping address
+ *   - created_at {string} - Order creation timestamp
+ *   - items {Array<Object>} - List of items in the order
+ *       - product_id {number} - Product ID
+ *       - name {string} - Product name
+ *       - price {number} - Price per unit
+ *       - quantity {number} - Quantity ordered
+ * @returns {404} - No orders found for the customer
+ * @returns {500} - Internal server error
+ * 
+ * @example
+ * GET /api/orders
+ * Response:
+ * [
+ *   {
+ *     id: 1,
+ *     total_amount: 150,
+ *     status: "pending",
+ *     payment_status: "unpaid",
+ *     shipping_address: "Amman, Jordan",
+ *     created_at: "2025-09-20T12:00:00Z",
+ *     items: [
+ *       { product_id: 10, name: "Product A", price: 50, quantity: 2 },
+ *       { product_id: 12, name: "Product B", price: 25, quantity: 2 }
+ *     ]
+ *   }
+ * ]
+ */
+router.get('/', protect, customerController.getOrders);
 
 module.exports = router;
+
+
+/* =================== Swagger Documentation =================== */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Orders
+ *     description: Customer orders endpoints
+ *
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *
+ * security:
+ *   - bearerAuth: []
+ *
+ * paths:
+ *   /api/orders:
+ *     get:
+ *       summary: Get all orders for the logged-in customer
+ *       tags: [Orders]
+ *       security:
+ *         - bearerAuth: []
+ *       responses:
+ *         200:
+ *           description: List of customer orders returned
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     total_amount:
+ *                       type: number
+ *                     status:
+ *                       type: string
+ *                     payment_status:
+ *                       type: string
+ *                     shipping_address:
+ *                       type: string
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           product_id:
+ *                             type: integer
+ *                           name:
+ *                             type: string
+ *                           price:
+ *                             type: number
+ *                           quantity:
+ *                             type: integer
+ *         404:
+ *           description: No orders found
+ *         500:
+ *           description: Internal server error
+ */
+
+module.exports = router;
+
 
 
 /**

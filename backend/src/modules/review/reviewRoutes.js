@@ -1,12 +1,38 @@
+/**
+ * ===============================
+ * Review Routes
+ * ===============================
+ * @module ReviewRoutes
+ * @desc Routes for managing vendor reviews.
+ */
+
 const express = require('express');
 const router = express.Router();
 const reviewController = require('./reviewController');
-const { protect } = require('../../middleware/authMiddleware');
+const { protect, authorizeRole } = require('../../middleware/authMiddleware');
 
-router.post('/', protect, reviewController.addReview);
+/**
+ * @route POST /api/reviews
+ * @desc Add a review for a vendor
+ * @access Protected (customer only)
+ */
+router.post('/', protect, authorizeRole('customer'), reviewController.addReview);
+
+/**
+ * @route GET /api/reviews/vendor/:vendor_id
+ * @desc Get all reviews for a vendor
+ * @access Public
+ */
+router.get('/vendor/:vendor_id', reviewController.getVendorReviews);
+
+/**
+ * @route GET /api/reviews/vendor/:vendor_id/average
+ * @desc Get average rating for a vendor
+ * @access Public
+ */
+router.get('/vendor/:vendor_id/average', reviewController.getVendorAverageRating);
 
 module.exports = router;
-
 
 /* =================== Swagger Documentation =================== */
 
@@ -22,9 +48,6 @@ module.exports = router;
  *       type: http
  *       scheme: bearer
  *       bearerFormat: JWT
- *
- * security:
- *   - bearerAuth: []
  *
  * paths:
  *   /api/reviews:
@@ -52,27 +75,43 @@ module.exports = router;
  *       responses:
  *         201:
  *           description: Review added successfully
+ *
+ *   /api/reviews/vendor/{vendor_id}:
+ *     get:
+ *       summary: Get all reviews for a vendor
+ *       tags: [Reviews]
+ *       parameters:
+ *         - in: path
+ *           name: vendor_id
+ *           required: true
+ *           schema:
+ *             type: integer
+ *           description: Vendor ID
+ *       responses:
+ *         200:
+ *           description: List of reviews
+ *
+ *   /api/reviews/vendor/{vendor_id}/average:
+ *     get:
+ *       summary: Get average rating for a vendor
+ *       tags: [Reviews]
+ *       parameters:
+ *         - in: path
+ *           name: vendor_id
+ *           required: true
+ *           schema:
+ *             type: integer
+ *           description: Vendor ID
+ *       responses:
+ *         200:
+ *           description: Average rating
  *           content:
  *             application/json:
  *               schema:
  *                 type: object
  *                 properties:
- *                   id:
- *                     type: integer
- *                   user_id:
- *                     type: integer
  *                   vendor_id:
  *                     type: integer
- *                   rating:
+ *                   average_rating:
  *                     type: number
- *                   created_at:
- *                     type: string
- *                     format: date-time
- *                   updated_at:
- *                     type: string
- *                     format: date-time
- *         400:
- *           description: Validation error
- *         500:
- *           description: Internal server error
  */

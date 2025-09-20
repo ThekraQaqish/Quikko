@@ -2,15 +2,65 @@ const express = require('express');
 const router = express.Router();
 const productController = require('./productController');
 const { createProductValidator } = require("./productValidators");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect ,authorizeRole} = require("../../middleware/authMiddleware");
 
+/**
+ * ===============================
+ * Product Routes
+ * ===============================
+ * @module ProductRoutes
+ * @desc Routes for managing products including fetching, creating, updating, and deleting products.
+ *       Protected routes require authentication (JWT token) and input validation where applicable.
+ */
+
+/**
+ * @route GET /api/products/:id
+ * @desc Retrieve a single product by its ID
+ * @access Public
+ * @param {string} id.path.required - Product ID
+ * @returns {Object} 200 - Product details with vendor and category information
+ * @returns {Object} 404 - Product not found
+ * @returns {Object} 500 - Internal server error
+ */
 router.get('/:id', productController.getProduct);
 
-router.post("/", protect, createProductValidator,productController.createProduct);
+/**
+ * @route POST /api/products
+ * @desc Create a new product
+ * @access Protected (Vendor only)
+ * @middleware protect - Validates JWT token
+ * @middleware createProductValidator - Validates product input data
+ * @param {Object} body.required - Product data (name, price, stock, category, etc.)
+ * @returns {Object} 201 - Created product details
+ * @returns {Object} 400 - Validation error
+ * @returns {Object} 500 - Internal server error
+ */
+router.post("/", protect,authorizeRole('vendor'), createProductValidator, productController.createProduct);
 
-router.put("/:id", protect, productController.updateProduct);
+/**
+ * @route PUT /api/products/:id
+ * @desc Update an existing product
+ * @access Protected (Vendor only)
+ * @middleware protect - Validates JWT token
+ * @param {string} id.path.required - Product ID
+ * @param {Object} body.required - Updated product data
+ * @returns {Object} 200 - Updated product details
+ * @returns {Object} 404 - Product not found
+ * @returns {Object} 500 - Internal server error
+ */
+router.put("/:id", protect,authorizeRole('vendor'), productController.updateProduct);
 
-router.delete("/:id", protect, productController.deleteProduct);
+/**
+ * @route DELETE /api/products/:id
+ * @desc Delete a product
+ * @access Protected (Vendor only)
+ * @middleware protect - Validates JWT token
+ * @param {string} id.path.required - Product ID
+ * @returns {Object} 200 - Success message
+ * @returns {Object} 404 - Product not found
+ * @returns {Object} 500 - Internal server error
+ */
+router.delete("/:id", protect,authorizeRole('vendor'), productController.deleteProduct);
 
 module.exports = router;
 

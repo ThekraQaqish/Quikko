@@ -1,62 +1,107 @@
-const vendorModel = require("./vendorModel");
+const vendorService = require("./vendorService");
 
+/**
+ * ===============================
+ * Vendor Controller
+ * ===============================
+ * @module VendorController
+ * @desc Handles HTTP requests and responses for vendor operations,
+ *       delegates business logic to the service layer.
+ */
+
+/**
+ * Get all vendors.
+ *
+ * @route GET /vendors
+ * @access Admin
+ *
+ * @returns {JSON} 200 - Array of vendor objects
+ * @returns {JSON} 500 - Error message
+ */
 exports.getVendors = async (req, res) => {
   try {
-    const vendors = await vendorModel.getAllVendors();
-    res.json(vendors);
+    const vendors = await vendorService.getAllVendors();
+    res.json({ success: true, data: vendors });
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching vendors");
+    console.error("Get vendors error:", err);
+    res.status(500).json({ success: false, message: "Error fetching vendors" });
   }
 };
 
+/**
+ * Get vendor report for the logged-in vendor.
+ *
+ * @route GET /vendors/report
+ * @access Vendor
+ *
+ * @returns {JSON} 200 - Vendor report (total orders & sales)
+ * @returns {JSON} 404 - Vendor not found or no orders
+ * @returns {JSON} 500 - Internal server error
+ */
 exports.getVendorReport = async (req, res) => {
   try {
-    const userId = req.user.id; // من التوكن
-
-    const report = await vendorModel.getVendorReport(userId);
-
-    if (!report) {
-      return res
-        .status(404)
-        .json({ error: "Vendor not found or no orders yet" });
-    }
+    const userId = req.user.id; // from token
+    const report = await vendorService.getVendorReport(userId);
 
     res.json({
+      success: true,
       message: "Vendor report fetched successfully",
       data: report,
     });
   } catch (err) {
     console.error("Error fetching vendor report:", err);
-    res.status(500).json({ error: "Internal server error" });
+    if (err.message.includes("not found")) {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-
-// Get vendor orders
+/**
+ * Get all orders for the logged-in vendor.
+ *
+ * @route GET /vendors/orders
+ * @access Vendor
+ *
+ * @returns {JSON} 200 - Array of orders with items
+ * @returns {JSON} 404 - Vendor not found
+ * @returns {JSON} 500 - Error fetching vendor orders
+ */
 exports.getOrders = async (req, res) => {
-    try {
+  try {
     const userId = req.user.id;
+    const orders = await vendorService.getVendorOrders(userId);
 
-    const vendor = await vendorModel.getVendorIdByUserId(userId);
-    if (!vendor) {
-      return res.status(404).json({ success: false, message: "Vendor not found" });
-    }
-
-    const orders = await vendorModel.getVendorOrders(vendor.id);
     res.json({ success: true, data: orders });
   } catch (err) {
     console.error("Get vendor orders error:", err);
-    res.status(500).json({ success: false, message: "Error getting vendor orders" });
+    if (err.message.includes("Vendor not found")) {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    res
+      .status(500)
+      .json({ success: false, message: "Error getting vendor orders" });
   }
 };
 
+/**
+ * Update order status for a given order.
+ *
+ * @route PUT /vendors/orders/:id/status
+ * @access Vendor
+ *
+ * @param {string} req.params.id - Order ID
+ * @param {string} req.body.status - New order status (e.g., "shipped", "delivered")
+ *
+ * @returns {JSON} 200 - Updated order object
+ * @returns {JSON} 500 - Error updating order status
+ */
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const updatedOrder = await vendorModel.updateOrderStatus(id, status);
+    const updatedOrder = await vendorService.updateOrderStatus(id, status);
     res.json({ success: true, data: updatedOrder });
   } catch (err) {
     console.error("Update order status error:", err);
@@ -65,42 +110,76 @@ exports.updateOrderStatus = async (req, res) => {
       .json({ success: false, message: "Error updating order status" });
   }
 };
+
+/**
+ * Get all products of the logged-in vendor.
+ *
+ * @route GET /vendors/products
+ * @access Vendor
+ *
+ * @returns {JSON} 200 - Array of vendor products
+ * @returns {JSON} 404 - Vendor not found
+ * @returns {JSON} 500 - Error fetching vendor products
+ */
 exports.getProducts = async (req, res) => {
   try {
     const userId = req.user.id;
+    const products = await vendorService.getVendorProducts(userId);
 
-    const vendor = await vendorModel.getVendorByUserId(userId);
-    if (!vendor) {
-      return res.status(404).json({ message: "Vendor not found" });
-    }
-    const products = await vendorModel.getVendorProducts(vendor.id);
- 
-    res.json(products);
+    res.json({ success: true, data: products });
   } catch (err) {
     console.error("Error fetching vendor products:", err);
-    res.status(500).send("Error fetching products");
+    if (err.message.includes("Vendor not found")) {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    res.status(500).json({ success: false, message: "Error fetching products" });
   }
 };
 
+/**
+ * Get vendor profile for the logged-in vendor.
+ *
+ * @route GET /vendors/profile
+ * @access Vendor
+ *
+ * @returns {JSON} 200 - Vendor profile object
+ * @returns {JSON} 500 - Error fetching vendor profile
+ */
 exports.getProfile = async (req, res) => {
   try {
-    const user_id = req.user.id;
-    const profile = await vendorModel.getProfile(user_id);
-    res.json(profile);
+    const userId = req.user.id;
+    const profile = await vendorService.getProfile(userId);
+
+    res.json({ success: true, data: profile });
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching vendor profile");
+    console.error("Get vendor profile error:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error fetching vendor profile" });
   }
 };
 
+/**
+ * Update vendor profile for the logged-in vendor.
+ *
+ * @route PUT /vendors/profile
+ * @access Vendor
+ *
+ * @param {Object} req.body - Vendor profile data
+ *
+ * @returns {JSON} 200 - Updated vendor profile
+ * @returns {JSON} 500 - Error updating vendor profile
+ */
 exports.updateProfile = async (req, res) => {
   try {
-    const user_id = req.user.id;
-    const updatedProfile = await vendorModel.updateProfile(user_id, req.body);
-    res.json(updatedProfile);
+    const userId = req.user.id;
+    const updatedProfile = await vendorService.updateProfile(userId, req.body);
+
+    res.json({ success: true, data: updatedProfile });
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error updating vendor profile");
+    console.error("Update vendor profile error:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error updating vendor profile" });
   }
 };
-

@@ -3,24 +3,101 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('./adminController');
 const { protect, authorizeRole } = require('../../middleware/authMiddleware');
+const {
+  validate,
+  validateVendorId,
+  validateDeliveryId
+} = require('./adminValidators');
 
-// Vendors
-router.get('/vendors', adminController.getVendors);
-router.get('/vendors/pending', adminController.getPendingVendors);
-router.put('/vendors/:vendorId/approve', adminController.approveVendor);
-router.put('/vendors/:vendorId/reject', adminController.rejectVendor);
+/**
+ * ===============================
+ * Admin Routes
+ * ===============================
+ * @module AdminRoutes
+ * @desc Express routes for admin management including vendors, delivery companies, and orders.
+ *       All routes are protected and require admin role.
+ */
 
-// Deliveries
-router.get('/deliveries/pending', adminController.getPendingDeliveries);
-router.put('/deliveries/:deliveryId/approve', adminController.approveDelivery);
-router.put('/deliveries/:deliveryId/reject', adminController.rejectDelivery);
-router.get('/orders', protect, authorizeRole('admin'), adminController.getAllOrders);
-
-
+/** Vendors Routes */
+// Get all vendors (admin only)
 router.get(
-  "/delivery-companies",
+  '/vendors',
   protect,
-  authorizeRole("admin"),
+  authorizeRole('admin'),
+  adminController.getVendors
+);
+
+// Get pending vendors (admin only)
+router.get(
+  '/vendors/pending',
+  protect,
+  authorizeRole('admin'),
+  adminController.getPendingVendors
+);
+
+// Approve vendor (admin + vendorId validation)
+router.put(
+  '/vendors/:vendorId/approve',
+  protect,
+  authorizeRole('admin'),
+  validateVendorId(),
+  validate,
+  adminController.approveVendor
+);
+
+// Reject vendor (admin + vendorId validation)
+router.put(
+  '/vendors/:vendorId/reject',
+  protect,
+  authorizeRole('admin'),
+  validateVendorId(),
+  validate,
+  adminController.rejectVendor
+);
+
+/** Delivery Companies Routes */
+// Get pending delivery companies
+router.get(
+  '/deliveries/pending',
+  protect,
+  authorizeRole('admin'),
+  adminController.getPendingDeliveries
+);
+
+// Approve delivery company (admin + deliveryId validation)
+router.put(
+  '/deliveries/:deliveryId/approve',
+  protect,
+  authorizeRole('admin'),
+  validateDeliveryId(),
+  validate,
+  adminController.approveDelivery
+);
+
+// Reject delivery company (admin + deliveryId validation)
+router.put(
+  '/deliveries/:deliveryId/reject',
+  protect,
+  authorizeRole('admin'),
+  validateDeliveryId(),
+  validate,
+  adminController.rejectDelivery
+);
+
+/** Orders Routes */
+// Get all orders (admin only)
+router.get(
+  '/orders',
+  protect,
+  authorizeRole('admin'),
+  adminController.getAllOrders
+);
+
+/** List all delivery companies (admin only) */
+router.get(
+  '/delivery-companies',
+  protect,
+  authorizeRole('admin'),
   adminController.listAllCompanies
 );
 

@@ -1,6 +1,22 @@
 const db = require("../../config/db");
 
-const getProductById = async (id) => {
+/**
+ * @module ProductModel
+ * @desc Handles database operations for products including fetching, inserting, updating, and deleting products.
+ */
+
+/**
+ * Get a product by its ID.
+ *
+ * @async
+ * @function getProductById
+ * @param {number} id - The ID of the product to retrieve.
+ * @returns {Promise<Object|null>} Returns the product object with vendor and category details or null if not found.
+ *
+ * @example
+ * const product = await getProductById(1);
+ */
+exports.getProductById = async (id) => {
   const result = await db.query(
     `SELECT p.*, v.store_name, c.name AS category_name
      FROM products p
@@ -9,10 +25,31 @@ const getProductById = async (id) => {
      WHERE p.id = $1`,
     [id]
   );
-  return result.rows[0];
+  return result.rows[0] || null;
 };
 
-const insertProduct = async (productData) => {
+/**
+ * Insert a new product into the database.
+ *
+ * @async
+ * @function insertProduct
+ * @param {Object} productData - Product details.
+ * @param {number} productData.vendor_id - Vendor ID who owns the product.
+ * @param {string} productData.name - Name of the product.
+ * @param {string} [productData.description] - Description of the product.
+ * @param {number} productData.price - Price of the product.
+ * @param {number} productData.stock_quantity - Stock quantity available.
+ * @param {Array} [productData.images] - Array of image URLs.
+ * @param {number} productData.category_id - Category ID of the product.
+ * @param {Array} [productData.variants] - Array of product variants (e.g., sizes/colors).
+ * @param {string} productData.created_at - Timestamp for creation.
+ * @param {string} productData.updated_at - Timestamp for last update.
+ * @returns {Promise<Object>} Returns the inserted product.
+ *
+ * @example
+ * const newProduct = await insertProduct({ vendor_id: 1, name: "T-Shirt", price: 25.5, stock_quantity: 100, category_id: 2 });
+ */
+exports.insertProduct = async (productData) => {
   const {
     vendor_id,
     name,
@@ -46,10 +83,31 @@ const insertProduct = async (productData) => {
     updated_at,
   ];
 
-  return db.query(query, values);
+  const result = await db.query(query, values);
+  return result.rows[0];
 };
 
-const updateProduct = async (id, vendor_id, productData) => {
+/**
+ * Update an existing product.
+ *
+ * @async
+ * @function updateProduct
+ * @param {number} id - Product ID to update.
+ * @param {number} vendor_id - Vendor ID for authorization.
+ * @param {Object} productData - Updated product details.
+ * @param {string} [productData.name] - Product name.
+ * @param {string} [productData.description] - Product description.
+ * @param {number} [productData.price] - Product price.
+ * @param {number} [productData.stock_quantity] - Stock quantity.
+ * @param {Array} [productData.images] - Array of image URLs.
+ * @param {number} [productData.category_id] - Category ID.
+ * @param {Array} [productData.variants] - Array of product variants.
+ * @returns {Promise<Object|null>} Returns the updated product or null if not found.
+ *
+ * @example
+ * const updatedProduct = await updateProduct(1, 1, { price: 30, stock_quantity: 50 });
+ */
+exports.updateProduct = async (id, vendor_id, productData) => {
   const {
     name,
     description,
@@ -83,21 +141,32 @@ const updateProduct = async (id, vendor_id, productData) => {
     category_id,
     variants ? JSON.stringify(variants) : null,
     id,
-    vendor_id
+    vendor_id,
   ];
 
   const result = await db.query(query, values);
-  return result.rows[0];
+  return result.rows[0] || null;
 };
 
-const deleteProduct = async (id, vendor_id) => {
+/**
+ * Delete a product from the database.
+ *
+ * @async
+ * @function deleteProduct
+ * @param {number} id - Product ID to delete.
+ * @param {number} vendor_id - Vendor ID for authorization.
+ * @returns {Promise<void>}
+ *
+ * @throws {Error} If product not found or unauthorized
+ *
+ * @example
+ * await deleteProduct(1, 1);
+ */
+exports.deleteProduct = async (id, vendor_id) => {
   const query = `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`;
-  await db.query(query, [id, vendor_id]);
-};
+  const result = await db.query(query, [id, vendor_id]);
 
-module.exports = {
-  getProductById,
-  insertProduct,
-  updateProduct,
-  deleteProduct,
+  if (result.rowCount === 0) {
+    throw new Error("Product not found or unauthorized");
+  }
 };

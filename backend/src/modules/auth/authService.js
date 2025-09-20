@@ -1,36 +1,56 @@
-const pool = require('../../config/db');
 const { admin } = require('../../infrastructure/firebase');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { insertUser, insertCustomer, insertVendor, insertDelivery } = require('../../modules/user/userRepository');
+const { insertUser, insertCustomer, insertVendor, insertDelivery } = require('./authModel');
+const pool = require('../../config/db');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+/**
+ * @module AuthService
+ * @desc Handles user registration, login, and authentication logic.
+ */
+
+/**
+ * @function register
+ * @desc Registers a new user (customer, vendor, delivery) in Firebase and Postgres.
+ *       - Hashes password for Postgres storage.
+ *       - Inserts role-specific records.
+ *
+ * @param {Object} data - User data
+ * @param {string} data.name - Full name
+ * @param {string} data.email - Email
+ * @param {string} [data.password] - Password
+ * @param {string} [data.phone] - Phone
+ * @param {string} [data.address] - Customer address
+ * @param {string} [data.store_name] - Vendor store name
+ * @param {string} [data.description] - Vendor store description
+ * @param {string} [data.company_name] - Delivery company name
+ * @param {string} [data.firebaseToken] - Optional Firebase token
+ * @param {string} role - User role ('customer', 'vendor', 'delivery')
+ *
+ * @returns {Promise<Object>} { postgresUser, firebaseUser }
+ * @throws {Error} Throws error if registration fails
+ */
 exports.register = async (data, role) => {
   let firebaseUser;
 
-  //  إذا جاي من الـ frontend بtoken جاهز (المستخدم أصلاً معمول على Firebase)
   if (data.firebaseToken) {
     firebaseUser = await admin.auth().verifyIdToken(data.firebaseToken);
     data.email = firebaseUser.email || data.email;
     data.phone = firebaseUser.phone_number || data.phone;
   } else {
-    // إذا جديد → ننشئه على Firebase
     firebaseUser = await admin.auth().createUser({
       email: data.email,
-      password: data.password, 
+      password: data.password,
       phoneNumber: data.phone || undefined,
       displayName: data.name,
     });
   }
 
-  let passwordHash = null;
-  if (data.password) {
-    passwordHash = await bcrypt.hash(data.password, 10);
-  }
+  const passwordHash = data.password ? await bcrypt.hash(data.password, 10) : null;
 
-  // إضافة بيانات عامة بجدول users
-  const user = await insertUser({
+  const postgresUser = await insertUser({
     name: data.name,
     email: data.email,
     phone: data.phone,
@@ -39,26 +59,32 @@ exports.register = async (data, role) => {
     address: data.address || null,
   });
 
-  // إضافة بيانات خاصة حسب الدور
   if (role === 'customer') {
-    await insertCustomer({ user_id: user.id });
+    await insertCustomer({ user_id: postgresUser.id });
   } else if (role === 'vendor') {
-    await insertVendor({
-      user_id: user.id,
-      store_name: data.store_name || null,
-      description: data.description || null,
-    });
+    await insertVendor({ user_id: postgresUser.id, store_name: data.store_name, description: data.description });
   } else if (role === 'delivery') {
-    await insertDelivery({
-      user_id: user.id,
-      company_name: data.company_name || null,
-    });
+    await insertDelivery({ user_id: postgresUser.id, company_name: data.company_name });
   }
 
-  // رجّع المستخدمين الاثنين (Firebase + Postgres)
-  return { postgresUser: user, firebaseUser };
+  return { postgresUser, firebaseUser };
 };
 
+/**
+ * @function login
+ * @desc Authenticates a user and returns JWT token.
+ *       - Checks user role and status for vendors/delivery
+ *
+ * @param {Object} credentials
+ * @param {string} credentials.email
+ * @param {string} credentials.password
+ * @returns {Promise<string>} JWT token
+ * @throws {Error} Throws error with code:
+ *   - USER_NOT_FOUND
+ *   - INVALID_CREDENTIALS
+ *   - NOT_FOUND_RECORD
+ *   - NOT_APPROVED
+ */
 exports.login = async ({ email, password }) => {
   const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
   const user = rows[0];
@@ -76,13 +102,9 @@ exports.login = async ({ email, password }) => {
     throw err;
   }
 
-  // Approval check للـ vendor و delivery
-  if (user.role === 'vendor' || user.role === 'delivery') {
+  if (['vendor', 'delivery'].includes(user.role)) {
     const table = user.role === 'vendor' ? 'vendors' : 'delivery_companies';
-    const { rows: statusRows } = await pool.query(
-      `SELECT status FROM ${table} WHERE user_id=$1`,
-      [user.id]
-    );
+    const { rows: statusRows } = await pool.query(`SELECT status FROM ${table} WHERE user_id=$1`, [user.id]);
 
     if (!statusRows[0]) {
       const err = new Error('Your vendor/delivery record not found.');
@@ -97,6 +119,5 @@ exports.login = async ({ email, password }) => {
     }
   }
 
-  const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
-  return token;
+  return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
 };
