@@ -1,7 +1,6 @@
 const productService = require("./productService");
 const productModel = require("./productModel");
 
-// Get Product by ID
 const getProduct = async (req, res) => {
   try {
     const product = await productModel.getProductById(req.params.id);
@@ -15,7 +14,6 @@ const getProduct = async (req, res) => {
   }
 };
 
-// Add Product
 const createProduct = async (req, res) => {
   try {
     const vendorId = req.user.id;
@@ -29,7 +27,6 @@ const createProduct = async (req, res) => {
   }
 };
 
-// Update Product
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -45,7 +42,6 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// Delete Product
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;

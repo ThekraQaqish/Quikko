@@ -150,14 +150,11 @@ exports.trackOrder = async function (orderId, customerId) {
 
 
 // ========== Carts ==========
-
-// Get all carts
 exports.getAllCarts = async () => {
   const result = await pool.query("SELECT * FROM carts ORDER BY created_at DESC");
   return result.rows;
 };
 
-// Get one cart with items
 exports.getCartById = async (id) => {
   const cartRes = await pool.query("SELECT * FROM carts WHERE id = $1", [id]);
   if (cartRes.rows.length === 0) return null;
@@ -167,7 +164,6 @@ exports.getCartById = async (id) => {
   return { ...cartRes.rows[0], items: itemsRes.rows };
 };
 
-// Create cart
 exports.createCart = async (userId) => {
   const result = await pool.query(
     "INSERT INTO carts (user_id) VALUES ($1) RETURNING *",
@@ -176,7 +172,6 @@ exports.createCart = async (userId) => {
   return result.rows[0];
 };
 
-// Update cart
 exports.updateCart = async (id, userId) => {
   const result = await pool.query(
     "UPDATE carts SET user_id = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
@@ -185,7 +180,6 @@ exports.updateCart = async (id, userId) => {
   return result.rows[0];
 };
 
-// Delete cart
 exports.deleteCart = async (id) => {
   await pool.query("DELETE FROM cart_items WHERE cart_id = $1", [id]);
   const result = await pool.query("DELETE FROM carts WHERE id = $1 RETURNING *", [id]);
@@ -193,8 +187,6 @@ exports.deleteCart = async (id) => {
 };
 
 // ========== Items ==========
-
-// Add item
 exports.addItem = async (cartId, productId, quantity, variant) => {
   const result = await pool.query(
     `INSERT INTO cart_items (cart_id, product_id, quantity, variant)
@@ -203,8 +195,6 @@ exports.addItem = async (cartId, productId, quantity, variant) => {
   );
   return result.rows[0];
 };
-
-// Update item
 exports.updateItem = async (id, quantity, variant) => {
   const result = await pool.query(
     `UPDATE cart_items 
@@ -215,14 +205,11 @@ exports.updateItem = async (id, quantity, variant) => {
   return result.rows[0];
 };
 
-// Delete item
 exports.deleteItem = async (id) => {
   const result = await pool.query("DELETE FROM cart_items WHERE id = $1 RETURNING *", [id]);
   return result.rows[0];
 };
 
-
-// Get all data from products table
 exports.getAllProducts = async ({ search, categoryId, page, limit }) => {
   let baseQuery = `
     SELECT *

@@ -32,7 +32,6 @@ exports.getVendorIdByUserId = async (userId) => {
   return rows[0]; 
 };
 
-// Get all orders that include vendor's products
 exports.getVendorOrders = async (vendorId) => {
   const query = `
       SELECT
@@ -54,7 +53,6 @@ exports.getVendorOrders = async (vendorId) => {
   return rows;
 };
 
-// Update order status
 exports.updateOrderStatus = async (orderId, status) => {
   const query = `
     UPDATE orders
@@ -66,13 +64,11 @@ exports.updateOrderStatus = async (orderId, status) => {
   return rows[0];
 };
 
-// Get all products for a specific vendor
 exports.getVendorProducts = async (vendorId) => {
   const result = await pool.query("SELECT * FROM products WHERE vendor_id=$1", [vendorId]);
   return result.rows;
 };
 
-// Get vendor profile by user_id
 exports.getProfile = async (userId) => {
   const query = `
     SELECT id, user_id, store_name, store_slug, store_logo, store_banner, 
@@ -85,7 +81,6 @@ exports.getProfile = async (userId) => {
   return rows[0];
 };
 
-// Update vendor profile (almost all editable fields)
 exports.updateProfile = async (
   userId,
   {

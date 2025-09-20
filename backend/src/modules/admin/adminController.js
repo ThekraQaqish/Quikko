@@ -66,9 +66,6 @@ exports.rejectVendor = async (req, res) => {
   }
 };
 
-
-
-// نفس الفكرة للـ delivery_companies
 exports.getPendingDeliveries = async (req, res) => {
   const { rows } = await pool.query(`SELECT * FROM delivery_companies WHERE status='pending'`);
   res.json(rows);

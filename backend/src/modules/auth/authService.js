@@ -9,28 +9,27 @@ const JWT_SECRET = process.env.JWT_SECRET;
 exports.register = async (data, role) => {
   let firebaseUser;
 
-  // ✅ إذا جاي من الـ frontend بtoken جاهز (المستخدم أصلاً معمول على Firebase)
+  //  إذا جاي من الـ frontend بtoken جاهز (المستخدم أصلاً معمول على Firebase)
   if (data.firebaseToken) {
     firebaseUser = await admin.auth().verifyIdToken(data.firebaseToken);
     data.email = firebaseUser.email || data.email;
     data.phone = firebaseUser.phone_number || data.phone;
   } else {
-    // ✅ إذا جديد → ننشئه على Firebase
+    // إذا جديد → ننشئه على Firebase
     firebaseUser = await admin.auth().createUser({
       email: data.email,
-      password: data.password, // لازم يكون موجود بالـ request
+      password: data.password, 
       phoneNumber: data.phone || undefined,
       displayName: data.name,
     });
   }
 
-  // 🔑 هاش لكلمة السر عشان نخزنها بالـ Postgres
   let passwordHash = null;
   if (data.password) {
     passwordHash = await bcrypt.hash(data.password, 10);
   }
 
-  // 🗄️ إضافة بيانات عامة بجدول users
+  // إضافة بيانات عامة بجدول users
   const user = await insertUser({
     name: data.name,
     email: data.email,
@@ -40,7 +39,7 @@ exports.register = async (data, role) => {
     address: data.address || null,
   });
 
-  // 🗄️ إضافة بيانات خاصة حسب الدور
+  // إضافة بيانات خاصة حسب الدور
   if (role === 'customer') {
     await insertCustomer({ user_id: user.id });
   } else if (role === 'vendor') {
@@ -56,7 +55,7 @@ exports.register = async (data, role) => {
     });
   }
 
-  // ✅ رجّع المستخدمين الاثنين (Firebase + Postgres)
+  // رجّع المستخدمين الاثنين (Firebase + Postgres)
   return { postgresUser: user, firebaseUser };
 };
 
@@ -77,7 +76,7 @@ exports.login = async ({ email, password }) => {
     throw err;
   }
 
-  // ✅ Approval check للـ vendor و delivery
+  // Approval check للـ vendor و delivery
   if (user.role === 'vendor' || user.role === 'delivery') {
     const table = user.role === 'vendor' ? 'vendors' : 'delivery_companies';
     const { rows: statusRows } = await pool.query(

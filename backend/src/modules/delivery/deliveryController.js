@@ -1,6 +1,5 @@
 const Delivery = require("./deliveryModel");
 
-//this for updateStatus
 const ALLOWED_STATUSES = [
   "pending",
   "processing",
@@ -9,7 +8,6 @@ const ALLOWED_STATUSES = [
   "cancelled",
 ];
 
-//the company can only edit the status of all orders assign to it 
 async function updateStatus(req, res) {
   const id = parseInt(req.params.id, 10);
   const { status, company_id } = req.body;
@@ -61,9 +59,6 @@ async function updateStatus(req, res) {
   }
 }
 
-
-
-//get the tracking info from orders table
 async function getTrackingInfo(req, res) {
   const orderId = parseInt(req.params.orderId, 10);
 
@@ -83,9 +78,6 @@ async function getTrackingInfo(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
-
-
-//dislay the coverage area for specific company
 async function getCoverageById(req, res) {
   const companyId = parseInt(req.params.companyId, 10);
 
@@ -105,8 +97,6 @@ async function getCoverageById(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
-
-//to get the profile of the company
 
 async function getCompanyProfile(req, res) {
   const companyId = parseInt(req.params.id, 10);
@@ -129,8 +119,6 @@ async function getCompanyProfile(req, res) {
   }
 }
 
-
-//edit the profile of the company 
 async function updateCompanyProfile(req, res) {
   const companyId = parseInt(req.params.id, 10);
   if (Number.isNaN(companyId) || companyId <= 0) {
@@ -156,7 +144,6 @@ async function updateCompanyProfile(req, res) {
   }
 }
 
-//get all orders for the company by its id
 async function listCompanyOrders(req, res) {
   const companyId = parseInt(req.params.companyId, 10);
 
@@ -179,7 +166,7 @@ async function addOrUpdateCoverage(req, res) {
     return res.status(400).json({ error: "Invalid company id" });
   }
 
-  const { areas } = req.body; // JSON body: { "areas": ["Amman", "Irbid"] }
+  const { areas } = req.body; 
   if (!Array.isArray(areas) || areas.length === 0) {
     return res.status(400).json({ error: "areas must be a non-empty array" });
   }

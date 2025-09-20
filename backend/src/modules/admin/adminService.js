@@ -1,4 +1,4 @@
-const pool = require('../../config/db'); // ملف اتصال الـ DB
+const pool = require('../../config/db'); 
 
 const getAllOrders = async () => {
   const query = `

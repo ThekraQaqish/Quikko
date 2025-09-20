@@ -1,6 +1,4 @@
 const pool = require("../../config/db");
-
-// Get order joined with delivery company
 async function getOrderWithCompany(orderId) {
   const result = await pool.query(
     `SELECT o.*, dc.id AS company_id, dc.company_name
@@ -22,7 +20,6 @@ async function updateStatus(id, status) {
   return result.rows[0];
 }
 
-//tracking info for the order
 async function getOrderById(orderId) {
   const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [
     orderId,
@@ -30,7 +27,6 @@ async function getOrderById(orderId) {
   return result.rows[0];
 }
 
-//get coverage area for specific company
 async function getCoverageById(companyId) {
   const result = await pool.query(
     `SELECT id AS company_id, company_name, coverage_areas 
@@ -42,7 +38,6 @@ async function getCoverageById(companyId) {
 }
 
 
-//additional task -- get the profile for the company 
 async function getProfileByCompanyId(companyId) {
   const result = await pool.query(
     `SELECT id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at
@@ -83,8 +78,6 @@ async function getOrdersByCompanyId(companyId) {
 }
 
 async function updateCoverageByCompanyId(companyId, newAreas) {
-  // newAreas: مصفوفة جديدة ["Amman", "Irbid"]
-  // أولاً نجيب الـ current coverage
   const result = await pool.query(
     `SELECT coverage_areas
      FROM delivery_companies
@@ -96,10 +89,8 @@ async function updateCoverageByCompanyId(companyId, newAreas) {
 
   const currentAreas = result.rows[0].coverage_areas?.areas || [];
 
-  // دمج المناطق الجديدة بدون تكرار
   const mergedAreas = Array.from(new Set([...currentAreas, ...newAreas]));
 
-  // تحديث الـ coverage_areas
   const updateResult = await pool.query(
     `UPDATE delivery_companies
      SET coverage_areas = $1,
@@ -115,12 +106,12 @@ async function updateCoverageByCompanyId(companyId, newAreas) {
 
 module.exports = {
   getOrderWithCompany,
-  updateStatus, //for PUT api/delivery/orders/:id
-  getOrderById, //for GET api/delivery/tracking/:orderid
-  getCoverageById, //for GET api/delivery/coverage/:companyid
-  getProfileByCompanyId, //for GET api/delivery/profile/:companyid
-  updateProfileByCompanyId, //for PUT api/delivery/profile/:companyid
-  getOrdersByCompanyId, //for GET api/delivery/orders/:companyud
-  updateCoverageByCompanyId, // for put api/delivery/coverage/:companyid
+  updateStatus,
+  getOrderById, 
+  getCoverageById,
+  getProfileByCompanyId, 
+  updateProfileByCompanyId,
+  getOrdersByCompanyId, 
+  updateCoverageByCompanyId,
 };
 

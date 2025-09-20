@@ -36,7 +36,6 @@ exports.getVendorReport = async (req, res) => {
   }
 };
 
-// Get vendor orders
 exports.getOrders = async (req, res) => {
     try {
     const userId = req.user.id;
@@ -54,7 +53,6 @@ exports.getOrders = async (req, res) => {
   }
 };
 
-// Update order status
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -69,10 +67,9 @@ exports.updateOrderStatus = async (req, res) => {
       .json({ success: false, message: "Error updating order status" });
   }
 };
-// Get vendor products
 exports.getProducts = async (req, res) => {
   try {
-    const vendorId = req.user.id; // Assuming vendor logged in
+    const vendorId = req.user.id; 
     const products = await vendorModel.getVendorProducts(vendorId);
     res.json(products);
   } catch (err) {
@@ -81,10 +78,9 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-// GET /api/vendor/profile
 exports.getProfile = async (req, res) => {
   try {
-    const user_id = req.user.id; // JWT middleware
+    const user_id = req.user.id;
     const profile = await vendorModel.getProfile(user_id);
     res.json(profile);
   } catch (err) {
@@ -93,7 +89,6 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// PUT /api/vendor/profile
 exports.updateProfile = async (req, res) => {
   try {
     const user_id = req.user.id;

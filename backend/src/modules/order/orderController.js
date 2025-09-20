@@ -2,7 +2,7 @@ const orderModel = require('./orderModel');
 
 const getOrders = async (req, res) => {
   try {
-    const customer_id = req.user.id; // JWT middleware should set req.user
+    const customer_id = req.user.id; 
     const orders = await orderModel.getCustomerOrders(customer_id);
 
     if (!orders.length) {

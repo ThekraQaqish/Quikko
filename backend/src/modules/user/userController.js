@@ -1,10 +1,9 @@
 const pool = require("../../config/db");
 
-// PUT /users/:id/fcm-token
 exports.updateFcmToken = async (req, res) => {
   try {
-    const { id } = req.params;         // id المستخدم
-    const { fcmToken } = req.body;     // التوكين الجديد
+    const { id } = req.params;      
+    const { fcmToken } = req.body;   
 
     if (!fcmToken) {
       return res.status(400).json({ error: "fcmToken is required" });

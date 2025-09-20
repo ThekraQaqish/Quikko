@@ -2,7 +2,7 @@ const paymentService = require("./paymentService");
 
 const createPayment = async (req, res) => {
   try {
-    const { amount } = req.body; // المبلغ من الفرونت
+    const { amount } = req.body; 
     const payment = await paymentService.createPayment(amount);
     res.json(payment);
   } catch (err) {
@@ -13,7 +13,7 @@ const createPayment = async (req, res) => {
 const executePayment = async (req, res) => {
   try {
     const { paymentId, PayerID } = req.query;
-    const amount = 1.00; //بجي من الداتابيز بدل الثابت
+    const amount = 1.00;
     const payment = await paymentService.executePayment(paymentId, PayerID, amount);
     res.json({ status: "success", payment });
   } catch (err) {

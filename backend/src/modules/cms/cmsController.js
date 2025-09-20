@@ -1,6 +1,6 @@
 const pool = require('../../config/db');
 
-// ✅ Get all CMS pages/banners
+// Get all CMS pages/banners
 exports.getAllCMS = async (req, res) => {
   try {
     const { status } = req.query; // optional filter by status
@@ -20,7 +20,7 @@ exports.getAllCMS = async (req, res) => {
   }
 };
 
-// ✅ Create CMS page/banner
+// Create CMS page/banner
 exports.createCMS = async (req, res) => {
   try {
     const { title, content, type, image_url, status } = req.body;
@@ -36,7 +36,7 @@ exports.createCMS = async (req, res) => {
   }
 };
 
-// ✅ Update CMS content
+//  Update CMS content
 exports.updateCMS = async (req, res) => {
   try {
     const { id } = req.params;
@@ -56,7 +56,7 @@ exports.updateCMS = async (req, res) => {
   }
 };
 
-// ✅ Delete CMS content
+//  Delete CMS content
 exports.deleteCMS = async (req, res) => {
   try {
     const { id } = req.params;

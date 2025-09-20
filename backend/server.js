@@ -3,13 +3,16 @@ const express = require('express');
 const pool = require('./src/config/db');
 const app = express();
 app.use(express.json());
+const { swaggerUi, specs } = require('./swagger');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-const cors = require('cors');
-app.use(cors({
-  origin: 'http://localhost:5173', // أسمح للفرونت إند فقط
-  methods: ['GET','POST','PUT','DELETE'],
-  credentials: true // إذا تحتاج الكوكيز أو توكنات الجلسة
-}));
+
+// const cors = require('cors');
+// app.use(cors({
+//   origin: 'http://localhost:5173', 
+//   methods: ['GET','POST','PUT','DELETE'],
+//   credentials: true 
+// }));
 
 
 // Test DB connection
@@ -19,13 +22,13 @@ pool.connect()
 
 // Routes
 const categoryRoutes = require('./src/modules/category/categoryRoutes');
-app.use('/categories', categoryRoutes);
+app.use('/api/categories', categoryRoutes);
 
 const vendorRoutes = require("./src/modules/vendor/vendorRoutes");
 app.use("/api/vendor", vendorRoutes);
 
 const deliveryRoutes = require("./src/modules/delivery/deliveryRoutes");
-app.use("/delivery", deliveryRoutes);
+app.use("/api/delivery", deliveryRoutes);
 
 const authRoutes = require('./src/modules/auth/authRoutes');
 app.use('/api/auth', authRoutes);
@@ -37,19 +40,30 @@ const paymentRoutes = require("./src/modules/payment/paymentRoutes");
 app.use("/api/payment", paymentRoutes);
 
 const notificationRoutes = require("./src/infrastructure/notification/notificationRoutes");
-app.use("/api", notificationRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 const userRoutes = require("./src/modules/user/userRoutes");
 app.use("/api/users", userRoutes);
 
 const cmsRoutes = require('./src/modules/cms/cmsRoutes');
-app.use('/api', cmsRoutes);
+app.use('/api/cms', cmsRoutes);
 
 const customerRoutes = require('./src/modules/customer/customerRoutes');
-app.use('/api/customer', customerRoutes);
+app.use('/api/customers', customerRoutes);
 
 const chatRoutes = require('./src/modules/chat/chatRoutes');
-app.use('/api', chatRoutes);
+app.use('/api/chat', chatRoutes);
+
+
+const productsRoutes = require('./src/modules/product/productRoutes');
+app.use('/api/products',productsRoutes)
+
+const orderRoutes = require('./src/modules/order/orderRoutes');
+app.use('/api/orders',orderRoutes);
+
+
+const reviewRoutes = require('./src/modules/review/reviewRoutes');
+app.use('/api/reviews',reviewRoutes);
 
 
 // Server Listener

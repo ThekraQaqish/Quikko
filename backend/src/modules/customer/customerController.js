@@ -54,12 +54,10 @@ exports.fetchStoreDetails = async function (req, res) {
   }
 };
 
-// Place order endpoint
-// Place order endpoint
-// controllers/customerController.js
+
 exports.postOrder = async function (req, res) {
   try {
-    const userId = req.user.id; // من authMiddleware
+    const userId = req.user.id; 
     const { items, address } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -86,7 +84,7 @@ exports.postOrder = async function (req, res) {
 
 exports.getOrderDetails = async function (req, res) {
   try {
-    const customerId = req.user.id; // جاي من التوكن
+    const customerId = req.user.id; 
     const { orderId } = req.params;
     if (isNaN(orderId)) {
       return res.status(400).json({ error: "Invalid order ID" });
@@ -112,7 +110,7 @@ exports.getOrderDetails = async function (req, res) {
 
 exports.trackOrder = async function (req, res) {
   try {
-    const customerId = req.user.id; // من التوكن
+    const customerId = req.user.id; 
     const orderId = req.params.orderId;
 
     const order = await customer.trackOrder(orderId, customerId);
@@ -133,7 +131,6 @@ exports.trackOrder = async function (req, res) {
   }
 };
 
-// Get all carts
 exports.getAllCarts = async (req, res) => {
   try {
     const carts = await customerService.getAllCarts();
@@ -144,7 +141,6 @@ exports.getAllCarts = async (req, res) => {
   }
 };
 
-// Get one cart with items
 exports.getCartById = async (req, res) => {
   try {
     const cart = await customerService.getCartById(req.params.id);
@@ -156,7 +152,6 @@ exports.getCartById = async (req, res) => {
   }
 };
 
-// Create cart
 exports.createCart = async (req, res) => {
   try {
     const cart = await customerService.createCart(req.user.id);
@@ -167,7 +162,6 @@ exports.createCart = async (req, res) => {
   }
 };
 
-// Update cart
 exports.updateCart = async (req, res) => {
   try {
     const { user_id } = req.body;
@@ -180,7 +174,6 @@ exports.updateCart = async (req, res) => {
   }
 };
 
-// Delete cart
 exports.deleteCart = async (req, res) => {
   try {
     const cart = await customerService.deleteCart(req.params.id);
@@ -192,7 +185,6 @@ exports.deleteCart = async (req, res) => {
   }
 };
 
-// Add item
 exports.addItem = async (req, res) => {
   try {
     const { cart_id, product_id, quantity, variant } = req.body;
@@ -204,7 +196,6 @@ exports.addItem = async (req, res) => {
   }
 };
 
-// Update item
 exports.updateItem = async (req, res) => {
   try {
     const { quantity, variant } = req.body;
@@ -217,7 +208,6 @@ exports.updateItem = async (req, res) => {
   }
 };
 
-// Delete item
 exports.deleteItem = async (req, res) => {
   try {
     const item = await customerService.deleteItem(req.params.id);
@@ -230,7 +220,6 @@ exports.deleteItem = async (req, res) => {
 };
 
 
-// Get all products with filter and search
 exports.getAllProducts = async (req, res) => {
   try {
     const { search, categoryId, page = 1, limit = 10 } = req.query;

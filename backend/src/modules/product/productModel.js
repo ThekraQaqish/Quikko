@@ -1,6 +1,5 @@
 const db = require("../../config/db");
 
-// Get product by ID with details
 const getProductById = async (id) => {
   const result = await db.query(
     `SELECT p.*, v.store_name, c.name AS category_name
@@ -13,7 +12,6 @@ const getProductById = async (id) => {
   return result.rows[0];
 };
 
-// Insert product
 const insertProduct = async (productData) => {
   const {
     vendor_id,
@@ -51,7 +49,6 @@ const insertProduct = async (productData) => {
   return db.query(query, values);
 };
 
-// Update product
 const updateProduct = async (id, vendor_id, productData) => {
   const {
     name,
@@ -93,7 +90,6 @@ const updateProduct = async (id, vendor_id, productData) => {
   return result.rows[0];
 };
 
-// Delete product
 const deleteProduct = async (id, vendor_id) => {
   const query = `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`;
   await db.query(query, [id, vendor_id]);

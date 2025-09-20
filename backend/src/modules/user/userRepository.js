@@ -20,7 +20,6 @@ exports.insertCustomer = async ({ user_id }) => {
 };
 
 exports.insertVendor = async ({ user_id, store_name, description }) => {
-  // توليد slug من اسم المتجر
   const store_slug = generateSlug(store_name);
 
   const { rows } = await pool.query(
