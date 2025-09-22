@@ -22,10 +22,35 @@ require('dotenv').config();
 const express = require('express');
 const pool = require('./src/config/db'); // PostgreSQL connection pool
 const app = express();
+const cookieParser = require("cookie-parser");
+const identifyCustomer = require("./src/middleware/identifyCustomer");
+const guestToken = require('./src/middleware/guestToken');
+
+
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
+app.use(cookieParser()); 
 
+
+
+
+// Route لإرسال كوكي
+app.get('/set-cookie', (req, res) => {
+  // نرسل كوكي باسم Cookie_1 وقيمة value
+  res.cookie('Cookie_1', 'value', {
+    httpOnly: true,   // لا يمكن الوصول لها من الجافاسكريبت في المتصفح
+    maxAge: 1000 * 60 * 60 * 24, // يوم واحد بالميلي ثانية
+    path: '/', 
+  });
+  res.send('Cookie is set!');
+});
+
+// Route لقراءة كوكي من العميل
+app.get('/get-cookie', (req, res) => {
+  console.log('Cookies:', req.cookies); // هنا رح تطلع جميع الكوكيز اللي استلمها السيرفر
+  res.json(req.cookies);
+});
 // ===============================
 // Swagger API Documentation Setup
 // ===============================

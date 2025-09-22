@@ -55,14 +55,54 @@ exports.insertCustomer = async ({ user_id }) => {
  * @param {string} [data.description] - Store description
  * @returns {Promise<Object>} Newly created vendor record
  */
-exports.insertVendor = async ({ user_id, store_name, description }) => {
-  const { rows } = await pool.query(
-    `INSERT INTO vendors (user_id, store_name, description, status, created_at, updated_at)
-     VALUES ($1, $2, $3, 'pending', NOW(), NOW()) RETURNING *`,
-    [user_id, store_name, description]
-  );
+exports.insertVendor = async ({
+  user_id,
+  store_name,
+  store_slug,
+  description = '',
+  status = 'pending',
+  contact_email = null,
+  phone = null,
+  address = null,
+  social_links = null,
+  commission_rate = 0.0
+}) => {
+  const query = `
+    INSERT INTO vendors (
+      user_id,
+      store_name,
+      store_slug,
+      description,
+      status,
+      contact_email,
+      phone,
+      address,
+      social_links,
+      commission_rate,
+      created_at,
+      updated_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+    RETURNING *;
+  `;
+
+  const values = [
+    user_id,
+    store_name,
+    store_slug,
+    description,
+    status,
+    contact_email,
+    phone,
+    address,
+    social_links,
+    commission_rate
+  ];
+
+  const { rows } = await pool.query(query, values);
   return rows[0];
 };
+
 
 /**
  * @function insertDelivery

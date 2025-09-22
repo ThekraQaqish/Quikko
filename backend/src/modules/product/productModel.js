@@ -19,10 +19,11 @@ const db = require("../../config/db");
 exports.getProductById = async (id) => {
   const result = await db.query(
     `SELECT p.*, v.store_name, c.name AS category_name
-     FROM products p
-     JOIN vendors v ON p.vendor_id = v.id
-     JOIN categories c ON p.category_id = c.id
-     WHERE p.id = $1`,
+    FROM products p
+    LEFT JOIN vendors v ON p.vendor_id = v.id
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE p.id = $1
+    `,
     [id]
   );
   return result.rows[0] || null;
@@ -163,10 +164,22 @@ exports.updateProduct = async (id, vendor_id, productData) => {
  * await deleteProduct(1, 1);
  */
 exports.deleteProduct = async (id, vendor_id) => {
-  const query = `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`;
-  const result = await db.query(query, [id, vendor_id]);
+  console.log('Deleting productId:', id, 'for vendorId:', vendor_id);
 
-  if (result.rowCount === 0) {
+  const result = await db.query(
+    `SELECT * FROM products WHERE id = $1 AND vendor_id = $2`,
+    [id, vendor_id]
+  );
+  console.log('SELECT check result:', result.rows);
+
+  const deleteResult = await db.query(
+    `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`,
+    [id, vendor_id]
+  );
+  console.log('DELETE result:', deleteResult.rows);
+
+  if (deleteResult.rowCount === 0) {
     throw new Error("Product not found or unauthorized");
   }
 };
+

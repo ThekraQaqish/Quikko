@@ -48,11 +48,21 @@ exports.createProduct = async (vendor_id, body) => {
  * @example
  * const updated = await updateProduct(1, 10, { price: 30 });
  */
-exports.updateProduct = async (vendor_id, productId, body) => {
-  const updatedProduct = await productModel.updateProduct(productId, vendor_id, body);
+exports.updateProduct = async (id, vendor_id, body, currentData) => {
+  const updatedProduct = await productModel.updateProduct(id, vendor_id, {
+    name: body.name ?? currentData.name,
+    description: body.description ?? currentData.description,
+    price: body.price ?? currentData.price,
+    stock_quantity: body.stock_quantity ?? currentData.stock_quantity,
+    images: body.images ?? currentData.images,
+    category_id: body.category_id ?? currentData.category_id,
+    variants: body.variants ?? currentData.variants,
+  });
+
   if (!updatedProduct) throw new Error("Product not found or unauthorized");
   return updatedProduct;
 };
+
 
 /**
  * Delete a product for a vendor.
@@ -68,5 +78,5 @@ exports.updateProduct = async (vendor_id, productId, body) => {
  * await deleteProduct(1, 10);
  */
 exports.deleteProduct = async (vendor_id, productId) => {
-  await productModel.deleteProduct(productId, vendor_id);
+  await productModel.deleteProduct( vendor_id,productId);
 };

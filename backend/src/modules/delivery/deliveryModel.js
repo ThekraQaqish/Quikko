@@ -138,16 +138,15 @@ exports.getOrdersByCompanyId = async (companyId) => {
   return result.rows;
 };
 
+
 /**
- * Get coverage by user ID
- * @async
- * @param {number} userId - User ID
- * @returns {Promise<Object|null>} Company coverage info or null
+ * Get delivery company by user ID
+ * @param {number} userId
  */
 exports.getCoverageById = async (userId) => {
   const result = await pool.query(
-    `SELECT id AS company_id, company_name, coverage_areas 
-     FROM delivery_companies 
+    `SELECT id, user_id, company_name, coverage_areas, status, created_at, updated_at
+     FROM delivery_companies
      WHERE user_id = $1`,
     [userId]
   );
@@ -155,17 +154,15 @@ exports.getCoverageById = async (userId) => {
 };
 
 /**
- * Add coverage areas
- * @async
- * @param {number} userId - User ID
- * @param {Array<string>} mergedAreas - Coverage areas to save
- * @returns {Promise<Object|null>} Updated company info or null
+ * Add / merge coverage areas
+ * @param {number} userId
+ * @param {Array<string>} mergedAreas
  */
 exports.addCoverage = async (userId, mergedAreas) => {
   const result = await pool.query(
     `UPDATE delivery_companies
      SET coverage_areas = $1,
-         updated_at = CURRENT_TIMESTAMP
+         updated_at = NOW()
      WHERE user_id = $2
      RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
     [mergedAreas, userId]
@@ -173,39 +170,57 @@ exports.addCoverage = async (userId, mergedAreas) => {
   return result.rows[0];
 };
 
+
 /**
- * Update coverage
- * @async
- * @param {number} id - Company ID
- * @param {number} user_id - User ID
- * @param {Object} data - { company_name, coverage_areas }
- * @returns {Promise<Object|null>} Updated company info or null
+ * Update company coverage completely
+ * @param {number} id
+ * @param {number} user_id
+ * @param {Object} data
  */
 exports.updateCoverage = async (id, user_id, data) => {
-  const { company_name, coverage_areas } = data;
-  const query = `
-    UPDATE delivery_companies
-    SET company_name = $1,
-        coverage_areas = $2,
-        updated_at = NOW()
-    WHERE id = $3 AND user_id = $4
-    RETURNING *;
-  `;
-  const values = [company_name, coverage_areas, id, user_id];
-  const result = await pool.query(query, values);
+  // احصل على الشركة الحالية أولاً
+  const company = await pool.query(
+    `SELECT * FROM delivery_companies WHERE id=$1 AND user_id=$2`,
+    [id, user_id]
+  );
+
+  if (!company.rows[0]) return null;
+
+  const updatedCompanyName = data.company_name || company.rows[0].company_name;
+  const updatedCoverage = data.coverage_areas || company.rows[0].coverage_areas;
+
+  const result = await pool.query(
+    `UPDATE delivery_companies
+     SET company_name = $1,
+         coverage_areas = $2,
+         updated_at = NOW()
+     WHERE id = $3 AND user_id = $4
+     RETURNING *`,
+    [updatedCompanyName, updatedCoverage, id, user_id]
+  );
+
   return result.rows[0];
 };
 
 /**
- * Delete coverage
- * @async
- * @param {number} id - Company ID
- * @param {number} user_id - User ID
- * @returns {Promise<void>}
+ * Delete specific coverage areas (not the entire row)
+ * @param {number} userId
+ * @param {Array<string>} areasToRemove
  */
-exports.deleteCoverage = async (id, user_id) => {
-  await pool.query(
-    `DELETE FROM delivery_companies WHERE id = $1 AND user_id = $2`,
-    [id, user_id]
+exports.deleteCoverageAreas = async (userId, areasToRemove) => {
+  const company = await exports.getCoverageById(userId);
+  if (!company) return null;
+
+  const currentAreas = company.coverage_areas || [];
+  const newAreas = currentAreas.filter(area => !areasToRemove.includes(area));
+
+  const result = await pool.query(
+    `UPDATE delivery_companies
+     SET coverage_areas = $1, updated_at = NOW()
+     WHERE user_id = $2
+     RETURNING *`,
+    [newAreas, userId]
   );
+
+  return result.rows[0];
 };

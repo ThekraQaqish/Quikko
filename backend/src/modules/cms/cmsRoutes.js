@@ -38,6 +38,7 @@ router.get('/', protect, authorizeRole('admin'), cmsController.getAllCMS);
  */
 router.post('/', protect, authorizeRole('admin'), validateCMS, cmsController.createCMS);
 
+
 /**
  * @route PUT /api/cms/:id
  * @desc Update an existing CMS page/banner by ID

@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./notificationController");
 const { protect, authorizeRole } = require("../../middleware/authMiddleware");
-const admin = require("../firebase"); // لازم يكون موجود لاستعمال send-test
+const {admin} = require("../firebase"); // لازم يكون موجود لاستعمال send-test
+const pool = require("../../config/db");
+
 
 /**
  * @route POST /api/notifications
@@ -24,6 +26,19 @@ router.post("/", protect, controller.sendNotification);
  * @returns {Array} Array of notification objects
  */
 router.get("/", protect, controller.getNotifications);
+
+
+// routes/userRoutes.js
+router.post("/save-fcm-token", protect, async (req, res) => {
+  const { fcmToken } = req.body;
+  if (!fcmToken) return res.status(400).json({ error: "FCM token required" });
+
+  await pool.query("UPDATE users SET fcm_token = $1 WHERE id = $2", [fcmToken, req.user.id]);
+
+  res.json({ success: true, fcmToken });
+});
+
+
 
 /**
  * @route POST /api/notifications/send-test

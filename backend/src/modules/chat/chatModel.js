@@ -30,6 +30,8 @@ exports.getAllMessages = async (user1, user2) => {
   return rows;
 };
 
+
+
 /**
  * @function createMessage
  * @async

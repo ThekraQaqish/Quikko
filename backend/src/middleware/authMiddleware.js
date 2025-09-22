@@ -16,15 +16,23 @@ const { verifyToken } = require('../utils/token');
  */
 exports.protect = (req, res, next) => {
     const authHeader = req.headers.authorization;
+    console.log("==== PROTECT DEBUG ====");
+    console.log("Auth Header:", authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log("No Bearer token found");
+
         return res.status(401).json({ message: 'Not authorized' });
     }
     const token = authHeader.split(' ')[1];
+     console.log("Extracted token:", token);
     try {
         const decoded = verifyToken(token);
+        console.log("Decoded payload:", decoded);
         req.user = decoded;
         next();
     } catch (err) {
+        console.log("JWT ERROR:", err.message);
+
         res.status(401).json({ message: 'Token invalid or expired' });
     }
 };
@@ -49,4 +57,21 @@ exports.authorizeRole = (...roles) => {
         next();
     };
 };
+
+// middleware/optionalProtect.js
+exports.optionalProtect = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = verifyToken(token);
+      req.customerId = decoded.id; // أو req.user حسب الكنترولر
+    } catch (err) {
+      console.log("JWT ERROR:", err.message);
+      // ما نرجع 401 هنا، نكمل كـ guest
+    }
+  }
+  next(); // نكمل سواء كان المستخدم مسجل أو guest
+};
+
 

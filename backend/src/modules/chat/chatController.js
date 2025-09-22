@@ -31,15 +31,23 @@ const chatService = require('./chatService');
  * ]
  */
 exports.getChatMessages = async (req, res) => {
-  const { user1, user2 } = req.query;
+  const currentUserId = parseInt(req.user?.id, 10);
+  const user2Id = parseInt(req.query?.user2, 10);
+  // تحقق من صحة القيم
+  if (isNaN(currentUserId) || isNaN(user2Id)) {
+    return res.status(400).json({ message: "Invalid user IDs" });
+  }
+
   try {
-    const messages = await chatService.getMessages(user1, user2);
+    const messages = await chatService.getMessages(currentUserId, user2Id);
     res.json(messages);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 /**
  * @function postChatMessage
@@ -76,7 +84,9 @@ exports.getChatMessages = async (req, res) => {
  * }
  */
 exports.postChatMessage = async (req, res) => {
-  const { sender_id, receiver_id, message } = req.body;
+  const sender_id = req.user.id;      // من التوكن
+  const { receiver_id, message } = req.body;
+
   try {
     const newMessage = await chatService.sendMessage(sender_id, receiver_id, message);
     res.status(201).json(newMessage);
@@ -85,4 +95,5 @@ exports.postChatMessage = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 

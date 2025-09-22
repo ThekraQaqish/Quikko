@@ -1,5 +1,6 @@
-const admin = require("../firebase");
+const {admin} = require("../firebase");
 const NotificationModel = require("./notificationModel");
+const pool = require("../../config/db");
 
 /**
  * ===============================

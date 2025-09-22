@@ -1,22 +1,24 @@
 const express = require("express");
 const customerController = require("./customerController");
-const { protect,authorizeRole } = require("../../middleware/authMiddleware");
+const { protect,authorizeRole,optionalProtect } = require("../../middleware/authMiddleware");
 const { getAllProductsValidator } = require("./customerValidators");
 const router = express.Router();
+const identifyCustomer = require("../../middleware/identifyCustomer");
+const guestToken = require("../../middleware/guestToken");
 
 /**
  * @route GET /api/customer/
  * @desc Get the authenticated customer's profile
  * @access Private
  */
-router.get('/', protect,authorizeRole('customer'),  customerController.getProfile);
+router.get('/profile', protect,authorizeRole('customer'),  customerController.getProfile);
 
 /**
  * @route PUT /api/customer/
  * @desc Update the authenticated customer's profile
  * @access Private
  */
-router.put('/', protect,authorizeRole('customer'),  customerController.updateProfile);
+router.put('/profile', protect,authorizeRole('customer'),  customerController.updateProfile);
 
 /**
  * @route GET /api/customer/stores/:storeId
@@ -49,12 +51,29 @@ router.get("/orders/:orderId", protect,authorizeRole('customer'), customerContro
  */
 router.get("/orders/:orderId/track", protect,authorizeRole('customer'),  customerController.trackOrder);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * @route GET /api/customer/cart
  * @desc Get all carts for the authenticated customer
  * @access Private
  */
-router.get("/cart", customerController.getAllCarts); 
+router.get("/cart",optionalProtect,guestToken,identifyCustomer, customerController.getAllCarts); 
 
 /**
  * @route GET /api/customer/cart/:id
@@ -62,14 +81,14 @@ router.get("/cart", customerController.getAllCarts);
  * @access Private
  * @param {number} id - Cart ID
  */
-router.get("/cart/:id", customerController.getCartById);
+router.get("/cart/:id",optionalProtect,guestToken,identifyCustomer, customerController.getCartById);
 
 /**
  * @route POST /api/customer/cart
  * @desc Create a new cart for the authenticated customer
  * @access Private
  */
-router.post("/cart", customerController.createCart); 
+router.post("/cart",optionalProtect,guestToken,identifyCustomer, customerController.createCart); 
 
 /**
  * @route PUT /api/customer/cart/:id
@@ -77,7 +96,7 @@ router.post("/cart", customerController.createCart);
  * @access Private
  * @param {number} id - Cart ID
  */
-router.put("/cart/:id",  customerController.updateCart); 
+router.put("/cart/:id",optionalProtect,guestToken,identifyCustomer,  customerController.updateCart); 
 
 /**
  * @route DELETE /api/customer/cart/:id
@@ -85,7 +104,7 @@ router.put("/cart/:id",  customerController.updateCart);
  * @access Private
  * @param {number} id - Cart ID
  */
-router.delete("/cart/:id",  customerController.deleteCart); 
+router.delete("/cart/:id",optionalProtect,guestToken,identifyCustomer,  customerController.deleteCart); 
 
 /**
  * @route POST /api/customer/cart/items
@@ -96,7 +115,7 @@ router.delete("/cart/:id",  customerController.deleteCart);
  * @body {number} quantity
  * @body {string} [variant]
  */
-router.post("/cart/items", customerController.addItem);
+router.post("/cart/items",optionalProtect,guestToken,identifyCustomer, customerController.addItem);
 
 /**
  * @route PUT /api/customer/cart/items/:id
@@ -106,7 +125,7 @@ router.post("/cart/items", customerController.addItem);
  * @body {number} quantity
  * @body {string} [variant]
  */
-router.put("/cart/items/:id",  customerController.updateItem); 
+router.put("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  customerController.updateItem); 
 
 /**
  * @route DELETE /api/customer/cart/items/:id
@@ -114,7 +133,34 @@ router.put("/cart/items/:id",  customerController.updateItem);
  * @access Private
  * @param {number} id - Item ID
  */
-router.delete("/cart/items/:id",  customerController.deleteItem); 
+router.delete("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  customerController.deleteItem); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @route GET /api/customer/products
@@ -170,7 +216,7 @@ router.get("/products", getAllProductsValidator, customerController.getAllProduc
  *   }
  * ]
  */
-router.get('/', protect, customerController.getOrders);
+router.get('/orders', protect, customerController.getOrders);
 
 module.exports = router;
 

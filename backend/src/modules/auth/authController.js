@@ -130,7 +130,6 @@ exports.login = async (req, res) => {
     res.status(200).json({ message: 'Login successful', token });
   } catch (err) {
     console.error('Login error:', err);
-
     switch (err.code) {
       case 'NOT_APPROVED':
         return res.status(403).json({ error: err.message });

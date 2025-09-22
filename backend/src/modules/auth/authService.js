@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { insertUser, insertCustomer, insertVendor, insertDelivery } = require('./authModel');
 const pool = require('../../config/db');
-
+const generateSlug = require('../../utils/stringHelpers')
 const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
@@ -62,7 +62,21 @@ exports.register = async (data, role) => {
   if (role === 'customer') {
     await insertCustomer({ user_id: postgresUser.id });
   } else if (role === 'vendor') {
-    await insertVendor({ user_id: postgresUser.id, store_name: data.store_name, description: data.description });
+    console.log('store_name:', data.store_name);
+    console.log('store_slug:', data.store_slug || generateSlug(data.store_name));
+
+    await insertVendor({
+  user_id: postgresUser.id,
+  store_name: data.store_name,
+  store_slug: data.store_slug || generateSlug(data.store_name),
+  description: data.description || '',
+  status: 'pending', // القيمة الافتراضية قبل الموافقة
+  contact_email: data.email,
+  phone: data.phone || null,
+  address: data.address || null,
+  social_links: null,
+  commission_rate: 0.0,
+});
   } else if (role === 'delivery') {
     await insertDelivery({ user_id: postgresUser.id, company_name: data.company_name });
   }

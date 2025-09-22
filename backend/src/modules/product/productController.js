@@ -1,5 +1,6 @@
 const productService = require("./productService");
 const productModel = require("./productModel");
+const db = require('../../config/db');
 
 /**
  * @module ProductController
@@ -51,16 +52,25 @@ exports.getProduct = async (req, res) => {
  */
 exports.createProduct = async (req, res) => {
   try {
-    const vendorId = req.user.id;
-    const result = await productService.createProduct(vendorId, req.body);
-    res
-      .status(201)
-      .json({ message: "Product added!", product: result.rows[0] });
-  } catch (error) {
-    console.error("Product creation error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    const userId = req.user.id;
+    const vendorResult = await db.query('SELECT id FROM vendors WHERE user_id = $1', [userId]);
+    if (vendorResult.rowCount === 0)
+      return res.status(403).json({ message: 'User is not a vendor' });
+
+    const vendorId = vendorResult.rows[0].id;
+
+    const now = new Date();
+    const productData = { ...req.body, vendor_id: vendorId, created_at: now, updated_at: now };
+
+    const product = await productModel.insertProduct(productData);
+
+    res.status(201).json({ message: 'Product added!', product });
+  } catch (err) {
+    console.error('Product creation error:', err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 /**
  * Update an existing product.
@@ -82,18 +92,39 @@ exports.createProduct = async (req, res) => {
  */
 exports.updateProduct = async (req, res) => {
   try {
-    const { id } = req.params;
-    const vendorId = req.user.id;
-    const updatedProduct = await productService.updateProduct(id, vendorId, req.body);
+    // 1️⃣ تحقق من أن الـuser هو Vendor
+    const vendorResult = await db.query(
+      'SELECT id FROM vendors WHERE user_id = $1',
+      [req.user.id]
+    );
+    if (vendorResult.rowCount === 0) 
+        return res.status(403).json({ message: 'User is not a vendor' });
 
-    if (!updatedProduct) return res.status(404).json({ message: "Product not found" });
+    const vendorId = vendorResult.rows[0].id;
 
-    res.json({ message: "Product updated successfully", data: updatedProduct });
+    // 2️⃣ تحقق من وجود المنتج لهذا البائع
+    const productCheck = await db.query(
+      'SELECT * FROM products WHERE id = $1 AND vendor_id = $2',
+      [req.params.id, vendorId]
+    );
+    if (productCheck.rowCount === 0) 
+        return res.status(404).json({ message: 'Product not found or unauthorized' });
+
+    // 3️⃣ بعد التحقق، استدعي Service لتحديث المنتج
+    const updatedProduct = await productService.updateProduct(
+      req.params.id,
+      vendorId,
+      req.body,
+      productCheck.rows[0] // البيانات الحالية
+    );
+
+    res.json({ message: 'Product updated successfully', data: updatedProduct });
   } catch (err) {
-    console.error("Update product error:", err);
-    res.status(500).json({ message: "Error updating product" });
+    console.error('Update product error:', err);
+    res.status(500).json({ message: 'Error updating product' });
   }
 };
+
 
 /**
  * Delete a product.
@@ -113,17 +144,36 @@ exports.updateProduct = async (req, res) => {
  */
 exports.deleteProduct = async (req, res) => {
   try {
-    const { id } = req.params;
-    const vendorId = req.user.id;
+    // تحويل ID من string إلى number للتأكد من المطابقة
+    const productId = parseInt(req.params.id, 10);
+    if (isNaN(productId)) 
+      return res.status(400).json({ message: 'Invalid product ID' });
 
-    const deleted = await productService.deleteProduct(id, vendorId);
+    // 1️⃣ تحقق من أن الـuser هو Vendor
+    const vendorResult = await db.query(
+      'SELECT id FROM vendors WHERE user_id = $1',
+      [req.user.id]
+    );
 
-    if (!deleted) return res.status(404).json({ message: "Product not found" });
-    
-    res.json({ message: "Product deleted successfully" });
+    if (vendorResult.rowCount === 0)
+      return res.status(403).json({ message: 'User is not a vendor' });
+
+    const vendorId = vendorResult.rows[0].id;
+
+    const productCheck = await db.query(
+      'SELECT id FROM products WHERE id = $1 AND vendor_id = $2',
+      [productId, vendorId]
+    );
+
+    if (productCheck.rowCount === 0)
+      return res.status(404).json({ message: 'Product not found or unauthorized' });
+    await productService.deleteProduct(productId, vendorId);
+
+    res.json({ message: 'Product deleted successfully' });
   } catch (err) {
-    console.error("Delete product error:", err);
-    res.status(500).json({ message: "Error deleting product" });
+    console.error('Delete product error:', err);
+    res.status(500).json({ message: 'Error deleting product' });
   }
 };
+
 

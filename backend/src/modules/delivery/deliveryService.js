@@ -59,11 +59,12 @@ exports.addCoverageAreas = async (userId, newAreas) => {
   const company = await DeliveryModel.getCoverageById(userId);
   if (!company) return null;
 
-  const currentAreas = company.coverage_areas?.areas || [];
+  const currentAreas = company.coverage_areas || [];
   const mergedAreas = Array.from(new Set([...currentAreas, ...newAreas]));
 
   return await DeliveryModel.addCoverage(userId, mergedAreas);
 };
+
 
 /**
  * Update coverage area
@@ -84,6 +85,25 @@ exports.updateCoverageArea = async (id, user_id, data) => {
  * @param {number} user_id
  * @returns {Promise<void>}
  */
-exports.deleteCoverageArea = async (id, user_id) => {
-  return await DeliveryModel.deleteCoverage(id, user_id);
+exports.deleteCoverageArea = async (userId, areasToRemove) => {
+  return await DeliveryModel.deleteCoverageAreas(userId, areasToRemove);
+};
+/**
+ * Get coverage areas for company by userId
+ * @async
+ * @param {number} userId
+ * @returns {Promise<Object|null>}
+ */
+exports.getCoverageAreas = async (userId) => {
+  return await DeliveryModel.getCoverageById(userId);
+};
+
+/**
+ * Get all orders for a delivery company
+ * @async
+ * @param {number} companyId - Company ID
+ * @returns {Promise<Array>} List of orders
+ */
+exports.getCompanyOrders = async (companyId) => {
+  return await DeliveryModel.getOrdersByCompanyId(companyId);
 };

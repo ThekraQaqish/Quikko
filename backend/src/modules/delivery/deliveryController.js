@@ -1,4 +1,4 @@
-const Delivery = require("./deliveryService");
+const DeliveryService = require("./deliveryService");
 
 /**
  * ====================================
@@ -22,7 +22,7 @@ exports.getCompanyProfile = async function (req, res) {
     const userId = req.user.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const profile = await Delivery.getProfileByUserId(userId);
+    const profile = await DeliveryService.getCompanyProfile(userId);
     if (!profile)
       return res.status(404).json({ error: "Company not found for this user" });
 
@@ -51,7 +51,7 @@ exports.updateCompanyProfile = async function (req, res) {
   const { company_name, coverage_areas } = req.body;
 
   try {
-    const updated = await Delivery.updateProfileByUserId(userId, {
+    const updated = await Delivery.updateCompanyProfile(userId, {
       company_name,
       coverage_areas,
     });
@@ -100,24 +100,34 @@ exports.updateOrderStatus = async function (req, res) {
       return res.status(400).json({ error: "Invalid order id" });
 
     if (!status || typeof status !== "string")
-      return res.status(400).json({ error: "status is required in request body" });
+      return res
+        .status(400)
+        .json({ error: "status is required in request body" });
 
     if (!ALLOWED_STATUSES.includes(status))
-      return res.status(400).json({ error: "Invalid status", allowed_statuses: ALLOWED_STATUSES });
+      return res
+        .status(400)
+        .json({ error: "Invalid status", allowed_statuses: ALLOWED_STATUSES });
 
-    const company = await Delivery.getProfileByUserId(userId);
+    const company = await Delivery.getCompanyProfile(userId);
     if (!company)
-      return res.status(403).json({ error: "User is not associated with any delivery company" });
+      return res
+        .status(403)
+        .json({ error: "User is not associated with any delivery company" });
 
-    const order = await Delivery.getOrderWithCompany(orderId);
+    const order = await Delivery.getOrderDetails(orderId);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
     if (order.company_id !== company.company_id)
-      return res.status(403).json({ error: "This company is not authorized to update this order" });
+      return res
+        .status(403)
+        .json({ error: "This company is not authorized to update this order" });
 
-    const updated = await Delivery.updateStatus(orderId, status);
+    const updated = await Delivery.updateOrderStatus(orderId, status);
 
-    return res.status(200).json({ message: "Order status updated", order: updated });
+    return res
+      .status(200)
+      .json({ message: "Order status updated", order: updated });
   } catch (err) {
     console.error("Error updating order status:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -144,16 +154,20 @@ exports.getTrackingInfo = async function (req, res) {
     if (Number.isNaN(orderId) || orderId <= 0)
       return res.status(400).json({ error: "Invalid order id" });
 
-    const order = await Delivery.getOrderById(orderId);
+    const order = await Delivery.getOrderDetails(orderId);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
     if (userRole === "delivery") {
-      const company = await Delivery.getCompanyByUserId(userId);
+      const company = await Delivery.getCompanyProfile(userId);
       if (!company || company.company_id !== order.delivery_company_id)
-        return res.status(403).json({ error: "Not authorized to view this order" });
+        return res
+          .status(403)
+          .json({ error: "Not authorized to view this order" });
     } else if (userRole === "customer") {
       if (order.customer_id !== userId)
-        return res.status(403).json({ error: "Not authorized to view this order" });
+        return res
+          .status(403)
+          .json({ error: "Not authorized to view this order" });
     }
 
     return res.status(200).json(order);
@@ -175,12 +189,19 @@ exports.getTrackingInfo = async function (req, res) {
  */
 exports.listCompanyOrders = async function (req, res) {
   try {
-    const companyId = parseInt(req.params.companyId || await Delivery.getCompany(req.user.id), 10);
+    let companyId;
 
-    if (Number.isNaN(companyId) || companyId <= 0)
+    if (req.params.companyId) {
+      companyId = parseInt(req.params.companyId, 10);
+    } else {
+      const company = await Delivery.getCompanyProfile(req.user.id);
+      companyId = company?.company_id;
+    }
+
+    if (!companyId || Number.isNaN(companyId))
       return res.status(400).json({ error: "Invalid company id" });
 
-    const orders = await Delivery.getOrdersByCompanyId(companyId);
+    const orders = await Delivery.getCompanyOrders(companyId);
     return res.status(200).json({ orders });
   } catch (err) {
     console.error("Error fetching company orders:", err);
@@ -201,10 +222,12 @@ exports.listCompanyOrders = async function (req, res) {
 exports.getCoverage = async function (req, res) {
   try {
     const userId = req.user.id;
-    const company = await Delivery.getCoverageById(userId);
+    const company = await Delivery.getCoverageAreas(userId);
 
     if (!company)
-      return res.status(403).json({ error: "This user is not a delivery company" });
+      return res
+        .status(403)
+        .json({ error: "This user is not a delivery company" });
 
     return res.status(200).json(company);
   } catch (err) {
@@ -224,7 +247,7 @@ exports.getCoverage = async function (req, res) {
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with updated coverage
  */
-exports.addCoverage = async function (req, res) {
+exports.addCoverage = async (req, res) => {
   const userId = req.user.id;
   const { areas } = req.body;
 
@@ -232,7 +255,7 @@ exports.addCoverage = async function (req, res) {
     return res.status(400).json({ error: "areas must be a non-empty array" });
 
   try {
-    const updatedCompany = await Delivery.addCoverage(userId, areas);
+    const updatedCompany = await DeliveryService.addCoverageAreas(userId, areas);
     if (!updatedCompany)
       return res.status(403).json({ error: "This user is not a delivery company" });
 
@@ -259,12 +282,16 @@ exports.updateCoverage = async (req, res) => {
   try {
     const { id } = req.params;
     const user_id = req.user.id;
-    const updatedCoverage = await Delivery.updateCoverage(id, user_id, req.body);
+
+    const updatedCoverage = await DeliveryService.updateCoverageArea(id, user_id, req.body);
 
     if (!updatedCoverage)
       return res.status(404).json({ message: "coverage area not found" });
 
-    res.json({ message: "coverage area updated successfully", data: updatedCoverage });
+    res.json({
+      message: "coverage area updated successfully",
+      data: updatedCoverage,
+    });
   } catch (err) {
     console.error("Update coverage area error:", err);
     res.status(500).json({ message: "Error updating coverage area" });
@@ -284,15 +311,23 @@ exports.updateCoverage = async (req, res) => {
  */
 exports.deleteCoverage = async (req, res) => {
   try {
-    const { id } = req.params;
-    const user_id = req.user.id;
+    const userId = req.user.id;
+    const areas = req.body?.areas;
 
-    const deletedRow = await Delivery.deleteCoverage(id, user_id);
-    if (!deletedRow) return res.status(404).json({ message: "coverage area not found" });
+    if (!Array.isArray(areas) || areas.length === 0)
+      return res.status(400).json({ error: "areas must be a non-empty array" });
 
-    res.json({ message: "coverage area deleted successfully" });
+    const updatedCompany = await DeliveryService.deleteCoverageArea(userId, areas);
+    if (!updatedCompany)
+      return res.status(404).json({ message: "coverage area not found" });
+
+    res.json({
+      message: "coverage areas deleted successfully",
+      data: updatedCompany,
+    });
   } catch (err) {
     console.error("Delete coverage area error:", err);
-    res.status(500).json({ message: "Error deleting coverage area" });
+    res.status(500).json({ message: "Error deleting coverage areas" });
   }
 };
+

@@ -22,7 +22,7 @@
  * const slug = generateSlug("My Awesome Store!");
  * console.log(slug); // "my-awesome-store"
  */
-exports.generateSlug = function(storeName) {
+module.exports = function generateSlug(storeName) {
   return storeName
     .toLowerCase()
     .trim()

@@ -55,7 +55,7 @@ exports.getVendorReport = async (userId) => {
  * @throws {Error} If vendor not found or DB query fails
  */
 exports.getVendorOrders = async (userId) => {
-  const vendor = await vendorModel.getVendorIdByUserId(userId);
+  const vendor = await vendorModel.getVendorByUserId(userId);
   if (!vendor) {
     throw new Error("Vendor not found");
   }
@@ -77,6 +77,12 @@ exports.updateOrderStatus = async (orderId, status) => {
   return await vendorModel.updateOrderStatus(orderId, status);
 };
 
+exports.getVendorProducts = async (userId) => {
+  const vendor = await vendorModel.getVendorByUserId(userId);
+  if (!vendor) throw new Error("Vendor not found");
+
+  return await vendorModel.getVendorProducts(vendor.id);
+};
 /**
  * Get all products for a vendor by user ID.
  *

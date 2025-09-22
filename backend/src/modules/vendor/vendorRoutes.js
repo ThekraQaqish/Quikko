@@ -18,7 +18,7 @@ const { updateOrderStatusValidator } = require('./vendorValidators');
  * @access Public
  * @returns {Array<Object>} Array of vendor records
  */
-router.get('/stores',authorizeRole('vendor'), vendorController.getVendors);
+router.get('/stores',protect,authorizeRole('vendor'), vendorController.getVendors);
 
 /**
  * @route GET /reports/:vendorId
@@ -27,7 +27,7 @@ router.get('/stores',authorizeRole('vendor'), vendorController.getVendors);
  * @param {string|number} vendorId - ID of the vendor
  * @returns {Object} Vendor report including total orders and total sales
  */
-router.get("/reports/:vendorId",authorizeRole('vendor'), vendorController.getVendorReport);
+router.get("/reports/:vendorId",protect,authorizeRole('vendor'), vendorController.getVendorReport);
 
 /**
  * @route GET /reports

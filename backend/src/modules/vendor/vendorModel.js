@@ -66,9 +66,27 @@ exports.getVendorReport = async (userId) => {
  * @returns {Promise<Object|null>} Vendor ID object or null
  */
 exports.getVendorIdByUserId = async (userId) => {
-  const query = `SELECT id FROM vendors WHERE user_id = $1`;
+  const query = `SELECT id FROM vendors WHERE id = $1`;
   const { rows } = await pool.query(query, [userId]);
   return rows[0];
+};
+
+
+exports.getVendorByUserId = async (userId) => {
+  const query = `SELECT * FROM vendors WHERE user_id = $1`;
+  const { rows } = await pool.query(query, [userId]);
+  return rows[0]; // ترجع صف البائع المرتبط بالـ user
+};
+
+exports.getVendorProducts = async (vendorId) => {
+  const query = `
+    SELECT *
+    FROM products
+    WHERE vendor_id = $1
+    ORDER BY created_at DESC
+  `;
+  const { rows } = await pool.query(query, [vendorId]);
+  return rows;
 };
 
 /**

@@ -178,6 +178,22 @@ exports.trackOrder = async function (req, res) {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * @function getAllCarts
  * @desc Retrieve all carts for the authenticated customer.
@@ -187,13 +203,22 @@ exports.trackOrder = async function (req, res) {
  */
 exports.getAllCarts = async (req, res) => {
   try {
-    const carts = await customerService.getAllCarts();
+    let carts;
+    if (req.customerId && typeof req.customerId === "number") {
+      carts = await customerService.getAllCartsByUser(req.customerId);
+    } else if (req.guestToken) {
+      carts = await customerService.getAllCartsByGuest(req.guestToken);
+    } else {
+      return res.status(400).json({ message: "No valid customerId or guestToken" });
+    }
     res.json(carts);
   } catch (err) {
     console.error("Error getting carts:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
 
 /**
  * @function getCartById
@@ -207,6 +232,13 @@ exports.getCartById = async (req, res) => {
   try {
     const cart = await customerService.getCartById(req.params.id);
     if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+    // تحقق الملكية
+    if ((req.customerId && cart.user_id !== req.customerId) ||
+        (!req.customerId && cart.guest_token !== req.guestToken)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     res.json(cart);
   } catch (err) {
     console.error("Error getting cart:", err);
@@ -223,13 +255,27 @@ exports.getCartById = async (req, res) => {
  */
 exports.createCart = async (req, res) => {
   try {
-    const cart = await customerService.createCart(req.user.id);
+    let cart;
+    console.log("CustomerId:", req.customerId, "GuestToken:", req.guestToken);
+
+    if (req.customerId && typeof req.customerId === "number") {
+      cart = await customerService.createCartForUser(req.customerId);
+    } else if (req.guestToken) {
+      cart = await customerService.createCartForGuest(req.guestToken);
+    } else {
+      return res.status(400).json({ message: "No valid customerId or guestToken" });
+    }
+
     res.status(201).json(cart);
   } catch (err) {
-    console.error("Error creating cart:", err);
+    console.error("Error creating cart:", err.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+
+
 
 /**
  * @function updateCart
@@ -241,15 +287,23 @@ exports.createCart = async (req, res) => {
  */
 exports.updateCart = async (req, res) => {
   try {
-    const { user_id } = req.body;
-    const cart = await customerService.updateCart(req.params.id, user_id);
+    const cart = await customerService.getCartById(req.params.id); // أولاً تجيب الكارت
     if (!cart) return res.status(404).json({ message: "Cart not found" });
-    res.json(cart);
+
+    // تحقق الملكية
+    if ((req.customerId && cart.user_id !== req.customerId) ||
+        (!req.customerId && cart.guest_token !== req.guestToken)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const updatedCart = await customerService.updateCart(req.params.id, req.customerId);
+    res.json(updatedCart);
   } catch (err) {
     console.error("Error updating cart:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 /**
  * @function deleteCart
@@ -260,14 +314,22 @@ exports.updateCart = async (req, res) => {
  */
 exports.deleteCart = async (req, res) => {
   try {
-    const cart = await customerService.deleteCart(req.params.id);
+    const cart = await customerService.getCartById(req.params.id);
     if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+    if ((req.customerId && cart.user_id !== req.customerId) ||
+        (!req.customerId && cart.guest_token !== req.guestToken)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    await customerService.deleteCart(req.params.id);
     res.json({ message: "Cart deleted" });
   } catch (err) {
     console.error("Error deleting cart:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 /**
  * @function addItem
@@ -283,6 +345,16 @@ exports.deleteCart = async (req, res) => {
 exports.addItem = async (req, res) => {
   try {
     const { cart_id, product_id, quantity, variant } = req.body;
+
+    const cart = await customerService.getCartById(cart_id);
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+    // تحقق الملكية
+    if ((req.customerId && cart.user_id !== req.customerId) ||
+        (!req.customerId && cart.guest_token !== req.guestToken)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
     const item = await customerService.addItem(cart_id, product_id, quantity, variant);
     res.status(201).json(item);
   } catch (err) {
@@ -303,9 +375,17 @@ exports.addItem = async (req, res) => {
 exports.updateItem = async (req, res) => {
   try {
     const { quantity, variant } = req.body;
-    const item = await customerService.updateItem(req.params.id, quantity, variant);
+    const item = await customerService.getItemById(req.params.id); // لازم تضيف getItemById في السيرفس
     if (!item) return res.status(404).json({ message: "Item not found" });
-    res.json(item);
+
+    const cart = await customerService.getCartById(item.cart_id);
+    if ((req.customerId && cart.user_id !== req.customerId) ||
+        (!req.customerId && cart.guest_token !== req.guestToken)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const updatedItem = await customerService.updateItem(req.params.id, quantity, variant);
+    res.json(updatedItem);
   } catch (err) {
     console.error("Error updating item:", err);
     res.status(500).json({ message: "Internal Server Error" });
@@ -321,14 +401,49 @@ exports.updateItem = async (req, res) => {
  */
 exports.deleteItem = async (req, res) => {
   try {
-    const item = await customerService.deleteItem(req.params.id);
+    const item = await customerService.getItemById(req.params.id);
     if (!item) return res.status(404).json({ message: "Item not found" });
+
+    const cart = await customerService.getCartById(item.cart_id);
+    if ((req.customerId && cart.user_id !== req.customerId) ||
+        (!req.customerId && cart.guest_token !== req.guestToken)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    await customerService.deleteItem(req.params.id);
     res.json({ message: "Item deleted" });
   } catch (err) {
     console.error("Error deleting item:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * @function getAllProducts
@@ -397,7 +512,7 @@ exports.getAllProducts = async (req, res) => {
 exports.getOrders  = async (req, res) => {
   try {
     const customer_id = req.user.id; 
-    const orders = await orderModel.getCustomerOrders(customer_id);
+    const orders = await customerModel.getCustomerOrders(customer_id);
 
     if (!orders.length) {
       return res.status(404).json({ message: 'No orders found' });

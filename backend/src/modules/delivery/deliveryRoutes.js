@@ -40,7 +40,12 @@ router.put("/orders/:id", protect,authorizeRole('delivery'), DeliveryController.
  * @middleware protect - checks JWT token
  * @controller DeliveryController.getTrackingInfo
  */
-router.get("/tracking/:orderId",authorizeRole('delivery'), protect, DeliveryController.getTrackingInfo);
+router.get(
+  "/tracking/:orderId",
+  protect,
+  authorizeRole("delivery"),
+  DeliveryController.getTrackingInfo
+);
 
 /**
  * @route   GET /orders
@@ -49,7 +54,7 @@ router.get("/tracking/:orderId",authorizeRole('delivery'), protect, DeliveryCont
  * @middleware protect - checks JWT token
  * @controller DeliveryController.listCompanyOrders
  */
-router.get("/orders", protect,authorizeRole('delivery'), DeliveryController.listCompanyOrders);
+router.get("/orders", protect,authorizeRole('delivery'), DeliveryController.listCompanyOrders);//hvpud a,tdih
 
 /**
  * @route   GET /coverage

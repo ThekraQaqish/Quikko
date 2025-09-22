@@ -115,9 +115,14 @@ exports.placeOrderFromCart = async function (userId, cartId, addressData) {
 
     // 3. Find delivery company covering the city
     const deliveryResult = await pool.query(
-      `SELECT id FROM delivery_companies
-       WHERE $1 = ANY(coverage_areas)
-       LIMIT 1`,
+      `SELECT id 
+      FROM delivery_companies
+      WHERE LOWER($1) = ANY(ARRAY(SELECT LOWER(unnest(coverage_areas))))
+        AND status = 'approved'
+      ORDER BY created_at ASC
+      LIMIT 1;
+
+      `,
       [address.city]
     );
 
@@ -220,6 +225,43 @@ exports.trackOrder = async function (orderId, customerId) {
   return result.rows[0];
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * ============================
  * Customer Module - Carts
@@ -291,6 +333,18 @@ exports.deleteCart = async (id) => {
  * Customer Module - Cart Items
  * ============================
  */
+/**
+ * Get a specific cart item by ID
+ * @param {number} id - Cart item ID
+ * @returns {Promise<Object|null>} Cart item object or null
+ */
+exports.getItemById = async (id) => {
+  const result = await pool.query(
+    "SELECT * FROM cart_items WHERE id = $1",
+    [id]
+  );
+  return result.rows[0] || null;
+};
 
 /**
  * Add item to cart
@@ -338,6 +392,111 @@ exports.deleteItem = async (id) => {
   );
   return result.rows[0];
 };
+/**
+ * @module CartService
+ * @description Service layer functions for managing shopping carts
+ * in the database, supporting both authenticated users and guest users.
+ */
+
+/**
+ * Fetch all carts belonging to a specific authenticated user.
+ * 
+ * @async
+ * @function getAllCartsByUser
+ * @param {number} userId - The ID of the authenticated user.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of cart objects.
+ * @throws {Error} If the database query fails.
+ */
+exports.getAllCartsByUser = async (userId) => {
+  const result = await pool.query("SELECT * FROM carts WHERE user_id = $1", [userId]);
+  return result.rows;
+};
+
+/**
+ * Fetch all carts belonging to a guest (non-authenticated user).
+ * 
+ * @async
+ * @function getAllCartsByGuest
+ * @param {string} guestToken - The unique token identifying the guest.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of cart objects.
+ * @throws {Error} If the database query fails.
+ */
+exports.getAllCartsByGuest = async (guestToken) => {
+  const result = await pool.query("SELECT * FROM carts WHERE guest_token = $1", [guestToken]);
+  return result.rows;
+};
+
+/**
+ * Create a new cart for an authenticated user.
+ * 
+ * @async
+ * @function createCartForUser
+ * @param {number} userId - The ID of the authenticated user.
+ * @returns {Promise<Object>} A promise that resolves to the newly created cart object.
+ * @throws {Error} If the database query fails.
+ */
+exports.createCartForUser = async (userId) => {
+  if (!userId || typeof userId !== "number") {
+    throw new Error("Invalid userId for cart creation");
+  }
+  const result = await pool.query(
+    "INSERT INTO carts (user_id, guest_token) VALUES ($1, NULL) RETURNING *",
+    [userId]
+  );
+  return result.rows[0];
+};
+/**
+ * Create a new cart for a guest (non-authenticated user).
+ * 
+ * @async
+ * @function createCartForGuest
+ * @param {string} guestToken - The unique token identifying the guest.
+ * @returns {Promise<Object>} A promise that resolves to the newly created cart object.
+ * @throws {Error} If the database query fails.
+ */
+exports.createCartForGuest = async (guestToken) => {
+  if (!guestToken) {
+    throw new Error("Guest token is required for guest cart");
+  }
+  const result = await pool.query(
+    "INSERT INTO carts (user_id, guest_token) VALUES (NULL, $1) RETURNING *",
+    [guestToken]
+  );
+  return result.rows[0];
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * ============================

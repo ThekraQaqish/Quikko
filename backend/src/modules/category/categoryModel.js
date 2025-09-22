@@ -50,10 +50,10 @@ exports.getCategoryById = async (categoryId) => {
  * @returns {Promise<Object>} Returns the inserted category object
  */
 exports.insertCategory = async (categoryData) => {
-  const { name, description } = categoryData;
+  const { name, parent_id } = categoryData;
   const result = await pool.query(
-    'INSERT INTO categories (name, description) VALUES ($1, $2) RETURNING *',
-    [name, description || null]
+    'INSERT INTO categories (name, parent_id) VALUES ($1, $2) RETURNING *',
+    [name, parent_id || null]
   );
   return result.rows[0];
 };
@@ -71,10 +71,10 @@ exports.insertCategory = async (categoryData) => {
  * @returns {Promise<Object|null>} Returns the updated category object or null if not found
  */
 exports.updateCategory = async (categoryId, categoryData) => {
-  const { name, description } = categoryData;
+  const { name, parent_id } = categoryData;
   const result = await pool.query(
-    'UPDATE categories SET name=$1, description=$2, updated_at=NOW() WHERE id=$3 RETURNING *',
-    [name, description || null, categoryId]
+    'UPDATE categories SET name=$1, parent_id=$2, updated_at=NOW() WHERE id=$3 RETURNING *',
+    [name, parent_id || null, categoryId]
   );
   return result.rows[0] || null;
 };
