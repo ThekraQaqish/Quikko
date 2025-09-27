@@ -51,23 +51,6 @@ router.get("/orders/:orderId", protect,authorizeRole('customer'), customerContro
  */
 router.get("/orders/:orderId/track", protect,authorizeRole('customer'),  customerController.trackOrder);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @route GET /api/customer/cart
  * @desc Get all carts for the authenticated customer
@@ -135,33 +118,6 @@ router.put("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  custo
  */
 router.delete("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  customerController.deleteItem); 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @route GET /api/customer/products
  * @desc Get all products with optional filters, pagination, and search
@@ -170,8 +126,8 @@ router.delete("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  cu
  * @query {number} [categoryId] - Category ID
  * @query {number} [page=1] - Page number
  * @query {number} [limit=10] - Items per page
- */
-router.get("/products", getAllProductsValidator, customerController.getAllProducts);
+ *///getAllProductsValidator,
+router.get("/products", customerController.getAllProducts);
 /**
  * @module OrdersRoutes
  * @desc Routes for customer order management. 
@@ -217,6 +173,7 @@ router.get("/products", getAllProductsValidator, customerController.getAllProduc
  * ]
  */
 router.get('/orders', protect, customerController.getOrders);
+router.get("/stores/:id/products", customerController.getStoreProducts);
 
 module.exports = router;
 

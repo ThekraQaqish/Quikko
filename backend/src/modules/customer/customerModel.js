@@ -226,42 +226,6 @@ exports.trackOrder = async function (orderId, customerId) {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * ============================
  * Customer Module - Carts
@@ -273,9 +237,31 @@ exports.trackOrder = async function (orderId, customerId) {
  * @returns {Promise<Array>} Array of cart objects
  */
 exports.getAllCarts = async () => {
-  const result = await pool.query("SELECT * FROM carts ORDER BY created_at DESC");
+  const result = await pool.query(`
+  SELECT c.id, c.user_id, c.created_at, c.updated_at, c.guest_token,
+         COALESCE(
+           json_agg(
+             json_build_object(
+               'id', ci.id,
+               'cart_id', ci.cart_id,
+               'quantity', ci.quantity,
+               'variant', ci.variant,
+               'price', p.price,
+               'name', p.name
+             )
+           ) FILTER (WHERE ci.id IS NOT NULL), '[]'
+         ) AS items
+  FROM carts c
+  LEFT JOIN cart_items ci ON ci.cart_id = c.id
+  LEFT JOIN products p ON ci.product_id = p.id
+  GROUP BY c.id
+  ORDER BY c.created_at DESC
+`);
+
+
   return result.rows;
 };
+
 
 /**
  * Get a cart by ID with items
@@ -286,9 +272,16 @@ exports.getCartById = async (id) => {
   const cartRes = await pool.query("SELECT * FROM carts WHERE id = $1", [id]);
   if (cartRes.rows.length === 0) return null;
 
-  const itemsRes = await pool.query("SELECT * FROM cart_items WHERE cart_id = $1", [id]);
+  const itemsRes = await pool.query(`
+    SELECT ci.id, ci.cart_id, ci.quantity, ci.variant, p.price, p.name
+    FROM cart_items ci
+    JOIN products p ON ci.product_id = p.id
+    WHERE ci.cart_id = $1
+  `, [id]);
+
   return { ...cartRes.rows[0], items: itemsRes.rows };
 };
+
 
 /**
  * Create a new cart for a user
@@ -408,9 +401,40 @@ exports.deleteItem = async (id) => {
  * @throws {Error} If the database query fails.
  */
 exports.getAllCartsByUser = async (userId) => {
-  const result = await pool.query("SELECT * FROM carts WHERE user_id = $1", [userId]);
+  const result = await pool.query(
+    `
+    SELECT 
+      c.id, 
+      c.user_id, 
+      c.created_at, 
+      c.updated_at, 
+      c.guest_token,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', ci.id,
+            'cart_id', ci.cart_id,
+            'quantity', ci.quantity,
+            'variant', ci.variant,
+            'price', p.price,
+            'name', p.name
+          )
+        ) FILTER (WHERE ci.id IS NOT NULL),
+        '[]'
+      ) AS items
+    FROM carts c
+    LEFT JOIN cart_items ci ON ci.cart_id = c.id
+    LEFT JOIN products p ON ci.product_id = p.id
+    WHERE c.user_id = $1
+    GROUP BY c.id
+    ORDER BY c.created_at DESC
+    `,
+    [userId]
+  );
+
   return result.rows;
 };
+
 
 /**
  * Fetch all carts belonging to a guest (non-authenticated user).
@@ -422,9 +446,40 @@ exports.getAllCartsByUser = async (userId) => {
  * @throws {Error} If the database query fails.
  */
 exports.getAllCartsByGuest = async (guestToken) => {
-  const result = await pool.query("SELECT * FROM carts WHERE guest_token = $1", [guestToken]);
+  const result = await pool.query(
+    `
+    SELECT 
+      c.id, 
+      c.user_id, 
+      c.created_at, 
+      c.updated_at, 
+      c.guest_token,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', ci.id,
+            'cart_id', ci.cart_id,
+            'quantity', ci.quantity,
+            'variant', ci.variant,
+            'price', p.price,
+            'name', p.name
+          )
+        ) FILTER (WHERE ci.id IS NOT NULL),
+        '[]'
+      ) AS items
+    FROM carts c
+    LEFT JOIN cart_items ci ON ci.cart_id = c.id
+    LEFT JOIN products p ON ci.product_id = p.id
+    WHERE c.guest_token = $1
+    GROUP BY c.id
+    ORDER BY c.created_at DESC
+    `,
+    [guestToken]
+  );
+
   return result.rows;
 };
+
 
 /**
  * Create a new cart for an authenticated user.
@@ -468,82 +523,72 @@ exports.createCartForGuest = async (guestToken) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * ============================
  * Customer Module - Products
  * ============================
  */
-
+// Get all data from products table
 /**
- * Get all products with optional filters and pagination
- * @param {Object} filters
- * @param {string|null} filters.search - Search term
- * @param {number|null} filters.categoryId - Category ID
- * @param {number} filters.page - Page number (>=1)
- * @param {number} filters.limit - Number of items per page
- * @returns {Promise<Array>} Array of product objects
+ * @function getAllProducts
+ * @desc Fetch all products with optional filters, pagination, and search
+ * @param {Object} param0
+ * @param {string} [param0.search] - Search term for product name or store name
+ * @param {number} [param0.categoryId] - Filter by category ID
+ * @param {number} [param0.page=1] - Page number
+ * @param {number} [param0.limit=10] - Items per page
+ * @returns {Promise<Array>} - Array of product objects with images
  */
-exports.getAllProducts = async ({ search, categoryId, page, limit }) => {
-  let baseQuery = `
-    SELECT 
-      p.*, 
-      v.store_name
-    FROM products p
-    LEFT JOIN vendors v ON p.vendor_id = v.id
-    WHERE 1=1
-  `;
-  const values = [];
-  let idx = 1;
+exports.getAllProducts = async ({ search, categoryId, page = 1, limit = 10 }) => {
+  console.log("getAllProducts model called")
+  try {
+    const offset = (page - 1) * limit;
+    const values = [limit, offset];
+    let idx = 3;
 
-  if (search) {
-    baseQuery += ` AND (p.name ILIKE $${idx} OR v.store_name ILIKE $${idx})`;
-    values.push(`%${search}%`);
-    idx++;
+    let filterQuery = '';
+    if (search) {
+      filterQuery += ` AND (p.name ILIKE $${idx} OR v.store_name ILIKE $${idx})`;
+      values.push(`%${search}%`);
+      idx++;
+    }
+    if (categoryId) {
+      filterQuery += ` AND p.category_id = $${idx}`;
+      values.push(categoryId);
+      idx++;
+    }
+
+    const query = `
+  SELECT 
+    p.*,
+    v.store_name,
+    COALESCE(
+  (
+    SELECT json_agg(pi.image_url::text ORDER BY pi.id)
+    FROM product_images pi
+    WHERE pi.product_id = p.id
+  )::jsonb,
+  '[]'::jsonb
+) AS images
+  FROM products p
+  LEFT JOIN vendors v ON v.id = p.vendor_id
+  WHERE 1=1
+  ${filterQuery}
+  ORDER BY p.created_at DESC
+  LIMIT $1 OFFSET $2
+`;
+
+    
+  const { rows } = await pool.query(query, values);
+
+    return rows;
+  } catch (err) {
+    console.error("Error in getAllProducts:", err);
+    throw err;
   }
-
-  if (categoryId) {
-    baseQuery += ` AND p.category_id = $${idx}`;
-    values.push(categoryId);
-    idx++;
-  }
-
-  baseQuery += ` ORDER BY p.created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`;
-  values.push(limit);
-  values.push((page - 1) * limit);
-
-  const { rows } = await pool.query(baseQuery, values);
-  return rows;
 };
+
+
 
 /**
  * @function getCustomerOrders
@@ -599,3 +644,14 @@ exports.getCustomerOrders = async (customer_id) => {
   return result.rows;
 };
 
+
+exports.getVendorProducts = async (vendorId) => {
+  const query = `
+    SELECT *
+    FROM products
+    WHERE vendor_id = $1
+    ORDER BY created_at DESC
+  `;
+  const { rows } = await pool.query(query, [vendorId]);
+  return rows; // array من المنتجات
+};

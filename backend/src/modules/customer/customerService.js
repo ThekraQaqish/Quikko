@@ -120,3 +120,11 @@ exports.updateItem = async (id, quantity, variant) => {
 exports.deleteItem = async (id) => {
   return await customerModel.deleteItem(id);
 };
+
+
+exports.getAllProducts = async (filters) => {
+  const products = await customerModel.getAllProducts(filters);
+  products.forEach((p, i) => console.log(`Product ${i} images:`, p.images));
+
+  return products;
+};

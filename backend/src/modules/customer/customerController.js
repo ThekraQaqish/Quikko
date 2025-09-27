@@ -1,6 +1,6 @@
 const customerService = require("./customerService");
-const customerModel = require("./customerModel");
 const { validationResult } = require("express-validator");
+const customerModel = require("./customerModel");
 
 /**
  * @module CustomerController
@@ -179,21 +179,6 @@ exports.trackOrder = async function (req, res) {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @function getAllCarts
  * @desc Retrieve all carts for the authenticated customer.
@@ -272,10 +257,6 @@ exports.createCart = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
-
-
 
 /**
  * @function updateCart
@@ -418,33 +399,6 @@ exports.deleteItem = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @function getAllProducts
  * @desc Get all products with optional filters, pagination, and search.
@@ -467,7 +421,7 @@ exports.getAllProducts = async (req, res) => {
       limit: parseInt(limit),
     };
 
-    const result = await customerModel.getAllProducts(filters);
+    const result = await customerService.getAllProducts(filters);
     return res.json(result);
   } catch (err) {
     console.error("Get products error:", err);
@@ -522,5 +476,19 @@ exports.getOrders  = async (req, res) => {
   } catch (err) {
     console.error('Error fetching orders:', err);
     res.status(500).json({ error: 'Error fetching orders' });
+  }
+};
+
+exports.getStoreProducts = async (req, res) => {
+  try {
+    const storeId = req.params.id;
+
+    // استدعي الموديل للحصول على المنتجات حسب storeId
+    const products = await customerModel.getVendorProducts(storeId);
+
+    res.json({ success: true, data: products });
+  } catch (err) {
+    console.error("Error fetching store products:", err);
+    res.status(500).json({ success: false, message: "Error fetching products" });
   }
 };
