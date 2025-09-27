@@ -61,12 +61,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 // CORS Configuration (Optional)
 // ===============================
 // Uncomment and configure if frontend runs on a different origin
-// const cors = require('cors');
-// app.use(cors({
-//   origin: 'http://localhost:5173', 
-//   methods: ['GET','POST','PUT','DELETE'],
-//   credentials: true 
-// }));
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  methods: ['GET','POST','PUT','DELETE'],
+  credentials: true 
+}));
 
 // ===============================
 // DATABASE CONNECTION TEST
