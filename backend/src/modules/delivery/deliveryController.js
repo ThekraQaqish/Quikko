@@ -1,4 +1,4 @@
-const DeliveryService = require("./deliveryService");
+const Delivery = require("./deliveryService");
 
 /**
  * ====================================
@@ -22,7 +22,7 @@ exports.getCompanyProfile = async function (req, res) {
     const userId = req.user.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const profile = await DeliveryService.getCompanyProfile(userId);
+    const profile = await Delivery.getCompanyProfile(userId);
     if (!profile)
       return res.status(404).json({ error: "Company not found for this user" });
 
@@ -46,14 +46,35 @@ exports.getCompanyProfile = async function (req, res) {
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with updated company profile
  */
+// exports.updateCompanyProfile = async function (req, res) {
+//   const userId = req.user.id;
+//   const { company_name, coverage_areas } = req.body;
+
+//   try {
+//     const updated = await Delivery.updateCompanyProfile(userId, {
+//       company_name,
+//       coverage_areas,
+//     });
+
+//     if (!updated)
+//       return res.status(404).json({ error: "Company not found for this user" });
+
+//     return res.status(200).json({ company: updated });
+//   } catch (err) {
+//     console.error("Error updating company profile:", err);
+//     return res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 exports.updateCompanyProfile = async function (req, res) {
   const userId = req.user.id;
-  const { company_name, coverage_areas } = req.body;
+  const { company_name, coverage_areas, user_name, user_phone } = req.body;
 
   try {
     const updated = await Delivery.updateCompanyProfile(userId, {
       company_name,
       coverage_areas,
+      user_name,
+      user_phone,
     });
 
     if (!updated)
@@ -145,6 +166,38 @@ exports.updateOrderStatus = async function (req, res) {
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with order tracking info
  */
+// exports.getTrackingInfo = async function (req, res) {
+//   try {
+//     const orderId = parseInt(req.params.orderId, 10);
+//     const userId = req.user.id;
+//     const userRole = req.user.role;
+
+//     if (Number.isNaN(orderId) || orderId <= 0)
+//       return res.status(400).json({ error: "Invalid order id" });
+
+//     const order = await Delivery.getOrderDetails(orderId);
+//     if (!order) return res.status(404).json({ error: "Order not found" });
+
+//     if (userRole === "delivery") {
+//       const company = await Delivery.getCompanyProfile(userId);
+//       console.log(company, order.delivery_company_id);
+//       if (!company || company.company_id !== order.delivery_company_id)
+//         return res
+//           .status(403)
+//           .json({ error: "Not authorized to view this order 1 " });
+//     } else if (userRole === "customer") {
+//       if (order.customer_id !== userId)
+//         return res
+//           .status(403)
+//           .json({ error: "Not authorized to view this order 2" });
+//     }
+
+//     return res.status(200).json(order);
+//   } catch (err) {
+//     console.error("Error fetching order:", err);
+//     return res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 exports.getTrackingInfo = async function (req, res) {
   try {
     const orderId = parseInt(req.params.orderId, 10);
@@ -164,7 +217,7 @@ exports.getTrackingInfo = async function (req, res) {
           .status(403)
           .json({ error: "Not authorized to view this order" });
     } else if (userRole === "customer") {
-      if (order.customer_id !== userId)
+      if (order.customer_user_id !== userId)
         return res
           .status(403)
           .json({ error: "Not authorized to view this order" });
@@ -255,9 +308,11 @@ exports.addCoverage = async (req, res) => {
     return res.status(400).json({ error: "areas must be a non-empty array" });
 
   try {
-    const updatedCompany = await DeliveryService.addCoverageAreas(userId, areas);
+    const updatedCompany = await Delivery.addCoverageAreas(userId, areas);
     if (!updatedCompany)
-      return res.status(403).json({ error: "This user is not a delivery company" });
+      return res
+        .status(403)
+        .json({ error: "This user is not a delivery company" });
 
     return res.status(200).json({ company: updatedCompany });
   } catch (err) {
@@ -283,7 +338,11 @@ exports.updateCoverage = async (req, res) => {
     const { id } = req.params;
     const user_id = req.user.id;
 
-    const updatedCoverage = await DeliveryService.updateCoverageArea(id, user_id, req.body);
+    const updatedCoverage = await Delivery.updateCoverageArea(
+      id,
+      user_id,
+      req.body
+    );
 
     if (!updatedCoverage)
       return res.status(404).json({ message: "coverage area not found" });
@@ -317,7 +376,7 @@ exports.deleteCoverage = async (req, res) => {
     if (!Array.isArray(areas) || areas.length === 0)
       return res.status(400).json({ error: "areas must be a non-empty array" });
 
-    const updatedCompany = await DeliveryService.deleteCoverageArea(userId, areas);
+    const updatedCompany = await Delivery.deleteCoverageArea(userId, areas);
     if (!updatedCompany)
       return res.status(404).json({ message: "coverage area not found" });
 
@@ -328,6 +387,52 @@ exports.deleteCoverage = async (req, res) => {
   } catch (err) {
     console.error("Delete coverage area error:", err);
     res.status(500).json({ message: "Error deleting coverage areas" });
+  }
+};
+
+/**
+ * Controller to get weekly report for authenticated delivery company
+ * @async
+ * @param {object} req - Express request object, expects deliveryCompanyId in req
+ * @param {object} res - Express response object
+ * @returns {Promise<void>} JSON response with report data or error
+ */
+exports.getDeliveryReport = async function (req, res) {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    if (userRole !== "delivery") {
+      return res
+        .status(403)
+        .json({
+          error: "Forbidden: only delivery companies can access this report",
+        });
+    }
+
+    // جلب بيانات الشركة بناءً على userId
+    const company = await Delivery.getCompanyProfile(userId);
+    if (!company) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const deliveryCompanyId = company.company_id; // ID الفعلي من قاعدة البيانات
+    const days = parseInt(req.query.days, 10) || 7;
+
+    const report = await Delivery.getWeeklyReport(deliveryCompanyId, days);
+
+    if (!report) {
+      return res.status(404).json({ error: "No report data found" });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      delivery_company_id: deliveryCompanyId,
+      report,
+    });
+  } catch (err) {
+    console.error("Error fetching delivery report:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

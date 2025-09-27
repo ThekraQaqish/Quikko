@@ -88,6 +88,7 @@ exports.updateCoverageArea = async (id, user_id, data) => {
 exports.deleteCoverageArea = async (userId, areasToRemove) => {
   return await DeliveryModel.deleteCoverageAreas(userId, areasToRemove);
 };
+
 /**
  * Get coverage areas for company by userId
  * @async
@@ -106,4 +107,15 @@ exports.getCoverageAreas = async (userId) => {
  */
 exports.getCompanyOrders = async (companyId) => {
   return await DeliveryModel.getOrdersByCompanyId(companyId);
+};
+
+/**
+ * Get weekly report via service layer
+ * @async
+ * @param {number} companyId - The delivery company ID
+ * @param {number} [days=7] - Number of days to include in the report
+ * @returns {Promise<Object>} Weekly report from the model
+ */
+exports.getWeeklyReport = async (companyId, days = 7) => {
+  return await DeliveryModel.getWeeklyReport(companyId, days);
 };
