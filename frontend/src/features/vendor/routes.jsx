@@ -8,8 +8,10 @@ import VendorDashboard from "./dashboard/VendorDashboard";
 import ProductManagement from "./product/ProductManagement";
 import OrderManagement from "./order/OrderManagement";
 import ChatPage from "./chat/ChatPage";
-import ReportsPage from "./reports/ReportsPage";
+import ReportsPage from "./profile/VendorProfilePage";
 import SettingsPage from "./settings/SettingsPage";
+import VendorProfilepage from "./profile/VendorProfilePage";
+import ProtectedRoute from "./ProtectedRoute";
 
 export default function VendorRoutes() {
   return (
@@ -21,12 +23,64 @@ export default function VendorRoutes() {
         {/* Auth */}
         <Route path="login" element={<Login />} />
         <Route path="register" element={<RegisterVendor />} /> 
-        <Route path="dashboard" element={<VendorDashboard />} />
-        <Route path="products" element={<ProductManagement />} />
-        <Route path="orders" element={<OrderManagement />} />
-        <Route path="chat" element={<ChatPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+
+        {/* الصفحات المحمية */}
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <VendorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="products"
+          element={
+            <ProtectedRoute>
+              <ProductManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="orders"
+          element={
+            <ProtectedRoute>
+              <OrderManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <ProtectedRoute>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute>
+              <VendorProfilepage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
     </Routes>
   );

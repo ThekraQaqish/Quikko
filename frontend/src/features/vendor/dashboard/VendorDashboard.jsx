@@ -53,9 +53,10 @@ const Dashboard = () => {
     setProductsCount(products.length);
   };
 
-  // 🔹 جلب آخر 5 أوردرات (unique)
-  const fetchLastOrders = async () => {
-    const data = await fetchOrders();
+ // 🔹 جلب آخر 5 أوردرات (unique) باستخدام الفنكشن الجديد
+const fetchLastOrders = async () => {
+  try {
+    const data = await fetchOrders(); // الفنكشن الجديد من VendorAPI.js
 
     // Group by order_id لتفادي التكرار
     const uniqueOrders = Object.values(
@@ -67,7 +68,12 @@ const Dashboard = () => {
 
     // آخر 5 أوردرات فقط
     setOrders(uniqueOrders.slice(0, 5));
-  };
+  } catch (err) {
+    console.error("❌ Error fetching last orders:", err);
+    setOrders([]);
+  }
+};
+
 
   useEffect(() => {
     fetchReport();

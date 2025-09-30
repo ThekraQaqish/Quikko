@@ -1,65 +1,55 @@
 import React, { useState, useEffect } from "react";
-import { fetchOrders, updateOrderStatus } from "../VendorAPI";
+import { fetchOrderItems, updateOrderItemStatus } from "../VendorAPI";
 
 export default function OrderManagement() {
-  const [orders, setOrders] = useState([]);
+  const [items, setItems] = useState([]);
   const [filter, setFilter] = useState(""); // فلتر الحالة
   const [loading, setLoading] = useState(false);
 
-  const allowedStatuses = ["pending", "shipped", "delivered", "cancelled"];
+  const allowedStatuses = ["pending", "accepted", "rejected"];
 
-  // دالة لمنع التكرار بناءً على order_id
-  const uniqueOrders = (data) => {
-    const map = {};
-    data.forEach((order) => {
-      map[order.order_id] = order; // إذا تكرر order_id، سيتم استبداله
-    });
-    return Object.values(map);
-  };
-
-  const loadOrders = async (statusFilter = "") => {
+  const loadItems = async (statusFilter = "") => {
     setLoading(true);
     try {
-      const data = await fetchOrders();
+      const data = await fetchOrderItems();
 
       // فلترة حسب الحالة
       const filtered =
         statusFilter === ""
           ? data
-          : data.filter((o) => o.status === statusFilter);
+          : data.filter((i) => i.vendor_status === statusFilter);
 
-      // إزالة التكرار
-      setOrders(uniqueOrders(filtered));
+      setItems(filtered);
     } catch (err) {
-      console.error("Error loading orders:", err);
-      setOrders([]);
+      console.error("Error loading order items:", err);
+      setItems([]);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    loadOrders();
+    loadItems();
   }, []);
 
-  const handleStatusChange = async (orderId, newStatus) => {
+  const handleStatusChange = async (itemId, newStatus) => {
     if (!allowedStatuses.includes(newStatus)) return;
-    await updateOrderStatus(orderId, newStatus);
-    loadOrders(filter);
+    await updateOrderItemStatus(itemId, newStatus);
+    loadItems(filter);
   };
 
   const handleFilterChange = (e) => {
     const status = e.target.value;
     setFilter(status);
-    loadOrders(status);
+    loadItems(status);
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Order Management</h1>
+      <h1 className="text-2xl font-bold mb-4">Order Management (Vendor Items)</h1>
 
       {/* فلتر الحالة */}
       <div className="mb-4 flex items-center gap-2">
-        <label htmlFor="statusFilter">Filter by Status:</label>
+        <label htmlFor="statusFilter">Filter by Item Status:</label>
         <select
           id="statusFilter"
           value={filter}
@@ -76,27 +66,30 @@ export default function OrderManagement() {
       </div>
 
       {loading ? (
-        <p>Loading orders...</p>
+        <p>Loading items...</p>
       ) : (
         <table className="w-full border-collapse border border-gray-300">
           <thead>
             <tr className="bg-gray-200 text-center">
+              <th className="border p-2">Item ID</th>
               <th className="border p-2">Order ID</th>
-              <th className="border p-2">Total Amount</th>
-              <th className="border p-2">Status</th>
-              <th className="border p-2">Shipping Address</th>
+              <th className="border p-2">Product</th>
+              <th className="border p-2">Quantity</th>
+              <th className="border p-2">Vendor Status</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order.order_id} className="text-center">
-                <td className="border p-2">{order.order_id}</td>
-                <td className="border p-2">{order.total_amount}</td>
+            {items.map((item) => (
+              <tr key={item.order_item_id} className="text-center">
+                <td className="border p-2">{item.order_item_id}</td>
+                <td className="border p-2">{item.order_id}</td>
+                <td className="border p-2">{item.product_name}</td>
+                <td className="border p-2">{item.quantity}</td>
                 <td className="border p-2">
                   <select
-                    value={order.status}
+                    value={item.vendor_status}
                     onChange={(e) =>
-                      handleStatusChange(order.order_id, e.target.value)
+                      handleStatusChange(item.order_item_id, e.target.value)
                     }
                     className="border rounded p-1"
                   >
@@ -107,7 +100,6 @@ export default function OrderManagement() {
                     ))}
                   </select>
                 </td>
-                <td className="border p-2">{order.shipping_address}</td>
               </tr>
             ))}
           </tbody>
