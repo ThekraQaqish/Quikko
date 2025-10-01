@@ -18,8 +18,8 @@ const CMSModel = require('./cmsModel');
  * const cmsPages = await CMSService.listCMS('active');
  * console.log(cmsPages);
  */
-exports.listCMS = async (status) => {
-  return await CMSModel.getAllCMS(status);
+exports.listCMS = async (type, title) => {
+  return await CMSModel.getAllCMS(type, title);
 };
 
 /**

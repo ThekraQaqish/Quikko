@@ -1,4 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import GenralRoutes from "./features/genral/Routes"
+import DeliveryRoutes from "./features/delivery/routes/deliveryRoutes";
+
 
 function App() {
   //   const [fcmToken, setFcmToken] = useState("");
@@ -59,8 +62,12 @@ function App() {
   // };
 
   return (
-<>
-</>
+    <Router>
+      <Routes>
+        <Route path="/*" element={<GenralRoutes />} />
+        <Route path="/delivery/*" element={<DeliveryRoutes />} />
+      </Routes>
+    </Router>
   );
 }
 

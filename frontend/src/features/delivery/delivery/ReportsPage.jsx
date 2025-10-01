@@ -22,7 +22,12 @@ export default function DeliveryReports() {
     loadReport();
   }, [days]);
 
-  if (loading) return <p className="text-center mt-10">Loading report...</p>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
   if (!report)
     return <p className="text-center mt-10">No report data available</p>;

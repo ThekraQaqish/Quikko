@@ -1,8 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const cmsController = require('./cmsController');
-const { validateCMS } = require('./cmsValidators');
-const { protect, authorizeRole } = require('../../middleware/authMiddleware');
+const cmsController = require("./cmsController");
+const { validateCMS } = require("./cmsValidators");
+const { protect, authorizeRole } = require("../../middleware/authMiddleware");
 
 /**
  * @module cmsRoutes
@@ -20,8 +20,7 @@ const { protect, authorizeRole } = require('../../middleware/authMiddleware');
  * @example
  * GET /api/cms
  */
-router.get('/', protect, authorizeRole('admin'), cmsController.getAllCMS);
-
+router.get("/", cmsController.getAllCMS);
 /**
  * @route POST /api/cms
  * @desc Create a new CMS page or banner
@@ -36,8 +35,13 @@ router.get('/', protect, authorizeRole('admin'), cmsController.getAllCMS);
  * @param {string} [status='active'] - Status of the CMS content
  * @returns {Promise<void>} JSON object of created CMS record
  */
-router.post('/', protect, authorizeRole('admin'), validateCMS, cmsController.createCMS);
-
+router.post(
+  "/",
+  protect,
+  authorizeRole("admin"),
+  validateCMS,
+  cmsController.createCMS
+);
 
 /**
  * @route PUT /api/cms/:id
@@ -54,7 +58,13 @@ router.post('/', protect, authorizeRole('admin'), validateCMS, cmsController.cre
  * @param {string} [status='active'] - Updated status
  * @returns {Promise<void>} JSON object of updated CMS record
  */
-router.put('/:id', protect, authorizeRole('admin'), validateCMS, cmsController.updateCMS);
+router.put(
+  "/:id",
+  protect,
+  authorizeRole("admin"),
+  validateCMS,
+  cmsController.updateCMS
+);
 
 /**
  * @route DELETE /api/cms/:id
@@ -65,11 +75,9 @@ router.put('/:id', protect, authorizeRole('admin'), validateCMS, cmsController.u
  * @param {string|number} id - ID of the CMS record to delete
  * @returns {Promise<void>} JSON message confirming deletion
  */
-router.delete('/:id', protect, authorizeRole('admin'), cmsController.deleteCMS);
+router.delete("/:id", protect, authorizeRole("admin"), cmsController.deleteCMS);
 
 module.exports = router;
-
-
 
 /**
  * @swagger

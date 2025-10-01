@@ -112,6 +112,31 @@ export const updateOrderStatus = async (orderId, status) => {
   return data;
 };
 
+//update payment status
+export const updateOrderPaymentStatus = async (orderId, paymentStatus) => {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `http://localhost:3000/api/delivery/${orderId}/paymentstatus`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        payment_status: paymentStatus.toLowerCase(), // << مهم جداً
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.message || "Failed to update payment status");
+  }
+
+  return response.json();
+};
 //tracking
 export async function getTrackingOrder(orderId) {
   try {
@@ -153,4 +178,6 @@ export async function fetchDeliveryReport(days) {
 
   return data.report;
 }
+
+
 

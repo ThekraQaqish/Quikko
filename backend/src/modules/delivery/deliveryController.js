@@ -46,25 +46,6 @@ exports.getCompanyProfile = async function (req, res) {
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with updated company profile
  */
-// exports.updateCompanyProfile = async function (req, res) {
-//   const userId = req.user.id;
-//   const { company_name, coverage_areas } = req.body;
-
-//   try {
-//     const updated = await Delivery.updateCompanyProfile(userId, {
-//       company_name,
-//       coverage_areas,
-//     });
-
-//     if (!updated)
-//       return res.status(404).json({ error: "Company not found for this user" });
-
-//     return res.status(200).json({ company: updated });
-//   } catch (err) {
-//     console.error("Error updating company profile:", err);
-//     return res.status(500).json({ error: "Internal server error" });
-//   }
-// };
 exports.updateCompanyProfile = async function (req, res) {
   const userId = req.user.id;
   const { company_name, coverage_areas, user_name, user_phone } = req.body;
@@ -92,12 +73,18 @@ exports.updateCompanyProfile = async function (req, res) {
  * @constant {Array<string>}
  */
 const ALLOWED_STATUSES = [
-  "pending",
+  "accepted",
   "processing",
   "out_for_delivery",
   "delivered",
-  "cancelled",
 ];
+
+const STATUS_FLOW = {
+  accepted: ["processing"],
+  processing: ["out_for_delivery"],
+  out_for_delivery: ["delivered"],
+  delivered: [], // نهائية
+};
 
 /**
  * Update the status of an order for a delivery company
@@ -117,9 +104,11 @@ exports.updateOrderStatus = async function (req, res) {
     const { status } = req.body;
     const userId = req.user.id;
 
+    // ✅ تحقق من صحة الـ orderId
     if (Number.isNaN(orderId) || orderId <= 0)
       return res.status(400).json({ error: "Invalid order id" });
 
+    // ✅ تحقق من صحة الـ status
     if (!status || typeof status !== "string")
       return res
         .status(400)
@@ -130,30 +119,56 @@ exports.updateOrderStatus = async function (req, res) {
         .status(400)
         .json({ error: "Invalid status", allowed_statuses: ALLOWED_STATUSES });
 
+    // ✅ جلب شركة الدليفري
     const company = await Delivery.getCompanyProfile(userId);
     if (!company)
       return res
         .status(403)
         .json({ error: "User is not associated with any delivery company" });
 
-    const order = await Delivery.getOrderDetails(orderId);
+    // ✅ جلب تفاصيل الطلب
+    let order = await Delivery.getOrderDetails(orderId);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
+    // ✅ تحقق من صلاحية الشركة
     if (order.company_id !== company.company_id)
-      return res
-        .status(403)
-        .json({ error: "This company is not authorized to update this order" });
+      return res.status(403).json({
+        error: "This company is not authorized to update this order",
+      });
 
+    // ✅ جلب كل الـ order items
+    const orderItems = await Delivery.getOrderItems(orderId);
+
+    // ✅ إذا كل الـ items مقبولة والأوردر مش accepted → حدثه تلقائياً
+    // const allAccepted = orderItems.every(
+    //   (item) => item.vendor_status === "accepted"
+    // );
+    // if (allAccepted && order.status !== "accepted") {
+    //   order = await Delivery.updateOrderStatus(orderId, "accepted");
+    // }
+
+    // ✅ منطق تسلسل الحالات: تحقق أن الانتقال مسموح
+    const allowedNextStatuses = STATUS_FLOW[order.status] || [];
+    if (!allowedNextStatuses.includes(status)) {
+      return res.status(400).json({
+        error: `Invalid status transition from '${order.status}' to '${status}'`,
+        allowed_next: allowedNextStatuses,
+      });
+    }
+
+    // ✅ تحديث الحالة الجديدة
     const updated = await Delivery.updateOrderStatus(orderId, status);
 
-    return res
-      .status(200)
-      .json({ message: "Order status updated", order: updated });
+    return res.status(200).json({
+      message: "Order status updated successfully",
+      order: updated,
+    });
   } catch (err) {
     console.error("Error updating order status:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 /**
  * Get tracking information for an order
@@ -166,38 +181,6 @@ exports.updateOrderStatus = async function (req, res) {
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with order tracking info
  */
-// exports.getTrackingInfo = async function (req, res) {
-//   try {
-//     const orderId = parseInt(req.params.orderId, 10);
-//     const userId = req.user.id;
-//     const userRole = req.user.role;
-
-//     if (Number.isNaN(orderId) || orderId <= 0)
-//       return res.status(400).json({ error: "Invalid order id" });
-
-//     const order = await Delivery.getOrderDetails(orderId);
-//     if (!order) return res.status(404).json({ error: "Order not found" });
-
-//     if (userRole === "delivery") {
-//       const company = await Delivery.getCompanyProfile(userId);
-//       console.log(company, order.delivery_company_id);
-//       if (!company || company.company_id !== order.delivery_company_id)
-//         return res
-//           .status(403)
-//           .json({ error: "Not authorized to view this order 1 " });
-//     } else if (userRole === "customer") {
-//       if (order.customer_id !== userId)
-//         return res
-//           .status(403)
-//           .json({ error: "Not authorized to view this order 2" });
-//     }
-
-//     return res.status(200).json(order);
-//   } catch (err) {
-//     console.error("Error fetching order:", err);
-//     return res.status(500).json({ error: "Internal server error" });
-//   }
-// };
 exports.getTrackingInfo = async function (req, res) {
   try {
     const orderId = parseInt(req.params.orderId, 10);
@@ -254,13 +237,20 @@ exports.listCompanyOrders = async function (req, res) {
     if (!companyId || Number.isNaN(companyId))
       return res.status(400).json({ error: "Invalid company id" });
 
+    // ✅ تشييك وتحديث تلقائي قبل ما نرجع الطلبات
+    await Delivery.checkAndUpdateAcceptedOrdersForCompany(companyId);
+
+    // ✅ الآن نجيب الطلبات بعد ما يتم تحديثها إذا لزم
     const orders = await Delivery.getCompanyOrders(companyId);
+
     return res.status(200).json({ orders });
   } catch (err) {
     console.error("Error fetching company orders:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 
 /**
  * Display coverage areas for a delivery company
@@ -433,6 +423,82 @@ exports.getDeliveryReport = async function (req, res) {
   } catch (err) {
     console.error("Error fetching delivery report:", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+/**
+ * @desc Update payment status for an order
+ * @route PUT /api/orders/:id/payment-status
+ * @access Private (e.g. delivery company or admin)
+ */
+exports.updatePaymentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_status } = req.body;
+
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!payment_status) {
+      return res.status(400).json({ message: "Payment status is required" });
+    }
+
+    // تحويل كل شيء للـ lowercase
+    const newStatus = payment_status.toLowerCase();
+
+    if (!["paid", "unpaid"].includes(newStatus)) {
+      return res.status(400).json({ message: "Invalid payment status" });
+    }
+
+    const order = await Delivery.getOrderById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const companyProfile = await Delivery.getCompanyProfile(req.user.id);
+    if (!companyProfile) {
+      return res
+        .status(403)
+        .json({ message: "No delivery company associated with this user" });
+    }
+
+    if (
+      Number(order.delivery_company_id) !== Number(companyProfile.company_id)
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: You are not assigned to this order" });
+    }
+
+    // تحويل الحالة الحالية للـ lowercase
+    const currentStatus = (order.payment_status || "").toLowerCase();
+
+    // منع الرجوع من paid -> unpaid
+    if (currentStatus === "paid" && newStatus === "unpaid") {
+      return res
+        .status(400)
+        .json({ message: "Cannot revert payment status from paid to unpaid" });
+    }
+
+    // تحديث فقط من unpaid -> paid
+    if (currentStatus === "unpaid" && newStatus === "paid") {
+      const updatedOrder = await Delivery.updatePaymentStatus(id, "paid");
+      return res.status(200).json({
+        message: "Payment status updated successfully",
+        order: updatedOrder,
+      });
+    }
+
+    // لو الحالة نفسها
+    return res.status(200).json({
+      message: `Payment status is already ${currentStatus}`,
+      order,
+    });
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 

@@ -25,8 +25,8 @@ const cmsService = require('./cmsService');
  */
 exports.getAllCMS = async (req, res) => {
   try {
-    const { status } = req.query;
-    const cms = await cmsService.listCMS(status);
+    const { type, title } = req.query;
+    const cms = await cmsService.listCMS(type, title);
     res.status(200).json(cms);
   } catch (err) {
     res.status(500).json({ error: err.message });

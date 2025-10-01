@@ -1,33 +1,49 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchCompanyOrders, updateOrderStatus } from "./DeliveryAPI";
+import {
+  fetchCompanyOrders,
+  updateOrderStatus,
+  updateOrderPaymentStatus,
+} from "./DeliveryAPI";
 import { FaBox, FaTimes } from "react-icons/fa";
 
-const ALLOWED_STATUSES = [
-  "pending",
-  "processing",
-  "out_for_delivery",
-  "delivered",
-  "cancelled",
-];
+const STATUS_FLOW = {
+  accepted: ["processing"],
+  processing: ["out_for_delivery"],
+  out_for_delivery: ["delivered"],
+  delivered: [],
+};
+
+const STATUS_LABELS = {
+  all: "All",
+  accepted: "Accepted",
+  processing: "Processing",
+  out_for_delivery: "Out for Delivery",
+  delivered: "Delivered",
+};
 
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [, setMessage] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [message, setMessage] = useState("");
   const [currentOrderId, setCurrentOrderId] = useState(null);
   const [currentStatus, setCurrentStatus] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [filter, setFilter] = useState("all");
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadOrders = async () => {
       try {
         const data = await fetchCompanyOrders();
-        setOrders(data);
-        setFilteredOrders(data);
+        const validOrders = data.filter((o) =>
+          // eslint-disable-next-line no-prototype-builtins
+          STATUS_FLOW.hasOwnProperty(o.status)
+        );
+        setOrders(validOrders);
+        setFilteredOrders(validOrders);
       } catch (err) {
         setMessage("❌ " + err.message);
       } finally {
@@ -37,12 +53,10 @@ export default function OrdersList() {
     loadOrders();
   }, []);
 
-  const handleFilterChange = (e) => {
-    const value = e.target.value;
-    setStatusFilter(value);
-    if (!value) setFilteredOrders(orders);
-    else setFilteredOrders(orders.filter((o) => o.status === value));
-  };
+  useEffect(() => {
+    if (filter === "all") setFilteredOrders(orders);
+    else setFilteredOrders(orders.filter((o) => o.status === filter));
+  }, [filter, orders]);
 
   const openStatusModal = (orderId, status) => {
     setCurrentOrderId(orderId);
@@ -50,114 +64,152 @@ export default function OrdersList() {
     setShowModal(true);
   };
 
-  const handleSaveStatus = async () => {
+  const handleUpdateStatus = async () => {
+    const nextStatuses = STATUS_FLOW[currentStatus];
+    if (!nextStatuses || nextStatuses.length === 0) return;
+
+    const newStatus = nextStatuses[0];
     try {
-      await updateOrderStatus(currentOrderId, currentStatus);
+      setUpdating(true);
+      await updateOrderStatus(currentOrderId, newStatus);
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === currentOrderId ? { ...o, status: currentStatus } : o
-        )
-      );
-      setFilteredOrders((prev) =>
-        prev.map((o) =>
-          o.id === currentOrderId ? { ...o, status: currentStatus } : o
+          o.id === currentOrderId ? { ...o, status: newStatus } : o
         )
       );
       setShowModal(false);
-      setMessage("✅ Status updated successfully!");
+      setMessage(`✅ Order #${currentOrderId} status updated to ${newStatus}`);
       setTimeout(() => setMessage(""), 2000);
     } catch (err) {
       alert(err.message);
+    } finally {
+      setUpdating(false);
     }
   };
 
-  if (loading) return <p className="text-center mt-10">⏳ Loading orders...</p>;
+ const handlePaymentUpdate = async (orderId) => {
+   try {
+     const result = await updateOrderPaymentStatus(orderId, "PAID");
+     alert(result.message);
+
+     setOrders((prev) =>
+       prev.map((o) =>
+         o.id === orderId
+           ? { ...o, payment_status: result.order.payment_status }
+           : o
+       )
+     );
+   } catch (err) {
+     alert("Error: " + err.message);
+   }
+ };
+
+
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   if (!orders.length)
     return <p className="text-center mt-10">📭 No orders found.</p>;
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-2xl">
+    <div className="max-w-6xl mx-auto mt-10 p-6 bg-gray-50 rounded-2xl">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center flex items-center justify-center gap-2">
         <FaBox className="text-green-600 text-3xl" /> Company Orders
       </h2>
 
-      {/* فلتر الحالة */}
-      <div className="mb-6 flex justify-end">
-        <select
-          value={statusFilter}
-          onChange={handleFilterChange}
-          className="border p-2 rounded-lg shadow-sm focus:ring-2 focus:ring-black"
-        >
-          <option value="">All Statuses</option>
-          {ALLOWED_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {status.replace(/_/g, " ").toUpperCase()}
-            </option>
-          ))}
-        </select>
+      {message && (
+        <p className="text-center mb-4 font-medium text-green-700 transition-all duration-300">
+          {message}
+        </p>
+      )}
+
+      {/* Filter Buttons */}
+      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+        {Object.keys(STATUS_LABELS).map((key) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`px-4 py-1 rounded-2xl border transition-all duration-300 ${
+              filter === key
+                ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+            }`}
+          >
+            {STATUS_LABELS[key]}
+          </button>
+        ))}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-900 text-white">
-            <tr>
-              <th className="p-3 text-left">#</th>
-              <th className="p-3 text-left">Customer</th>
-              <th className="p-3 text-left">Amount</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Payment</th>
-              <th className="p-3 text-left">Address</th>
-              <th className="p-3 text-left">Created</th>
-              <th className="p-3 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.map((o, idx) => (
-              <tr
-                key={o.id}
-                className={`${
-                  idx % 2 === 0 ? "bg-gray-50" : "bg-white"
-                } hover:bg-gray-100 transition`}
-              >
-                <td className="p-3 font-medium text-gray-800">{o.id}</td>
-                <td className="p-3">{o.customer_id}</td>
-                <td className="p-3 font-semibold text-green-700">
-                  {o.total_amount} JOD
-                </td>
-                <td className="p-3 capitalize">
+      {/* Orders Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredOrders.map((o) => (
+          <div
+            key={o.id}
+            className="bg-white p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 flex flex-col justify-between"
+          >
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Order #{o.id}
+              </h3>
+              <p className="text-sm text-gray-600 mb-1">
+                Customer: <strong>{o.customer_id}</strong>
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                Amount: <strong>{o.total_amount} JOD</strong>
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                Status:{" "}
+                <strong className="capitalize text-green-700">
                   {o.status.replace(/_/g, " ")}
-                </td>
-                <td className="p-3">{o.payment_status}</td>
-                <td className="p-3">{o.shipping_address}</td>
-                <td className="p-3 text-sm text-gray-500">
-                  {new Date(o.created_at).toLocaleString()}
-                </td>
-                <td className="p-3 space-x-2">
-                  <button
-                    onClick={() => openStatusModal(o.id, o.status)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                  >
-                    Edit Status
-                  </button>
-                  <button
-                    onClick={() =>
-                      navigate(`/delivery/dashboard/tracking/${o.id}`)
-                    }
-                    className="px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-                  >
-                    Track
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </strong>
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                Payment: <strong>{o.payment_status}</strong>
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                Address: <strong>{o.shipping_address}</strong>
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                {new Date(o.created_at).toLocaleString()}
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-4 flex gap-2">
+              {STATUS_FLOW[o.status].length > 0 && (
+                <button
+                  onClick={() => openStatusModal(o.id, o.status)}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
+                >
+                  {STATUS_FLOW[o.status][0].replace(/_/g, " ").toUpperCase()}
+                </button>
+              )}
+              <button
+                onClick={() => navigate(`/delivery/dashboard/tracking/${o.id}`)}
+                className="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all duration-300"
+              >
+                Track
+              </button>
+              <button
+                onClick={() => handlePaymentUpdate(o.id)}
+                disabled={o.payment_status === "paid"}
+                className="bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
+              >
+                Mark as Paid
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* مودال تعديل الحالة */}
+      {/* Status Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-96 relative">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-96 relative transition-all duration-300 transform scale-100">
             <button
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
               onClick={() => setShowModal(false)}
@@ -167,23 +219,29 @@ export default function OrdersList() {
             <h3 className="text-xl font-bold mb-4 text-gray-800">
               Edit Order Status
             </h3>
-            <select
-              value={currentStatus}
-              onChange={(e) => setCurrentStatus(e.target.value)}
-              className="w-full border p-2 rounded-lg mb-4 focus:ring-2 focus:ring-black"
-            >
-              {ALLOWED_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {status.replace(/_/g, " ").toUpperCase()}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={handleSaveStatus}
-              className="w-full bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition"
-            >
-              Save
-            </button>
+            <p className="mb-4 text-gray-700">
+              Current status:{" "}
+              <strong>{currentStatus.replace(/_/g, " ")}</strong>
+            </p>
+            {STATUS_FLOW[currentStatus].length > 0 ? (
+              <button
+                onClick={handleUpdateStatus}
+                disabled={updating}
+                className={`w-full py-2 rounded-lg text-white font-semibold transition-all duration-300 ${
+                  updating
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700 hover:scale-105"
+                }`}
+              >
+                {updating
+                  ? "Updating..."
+                  : STATUS_FLOW[currentStatus][0]
+                      .replace(/_/g, " ")
+                      .toUpperCase()}
+              </button>
+            ) : (
+              <p className="text-gray-500">No further status change allowed.</p>
+            )}
           </div>
         </div>
       )}

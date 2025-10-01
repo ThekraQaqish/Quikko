@@ -10,6 +10,7 @@ import {
   FaBuilding,
   FaPhone,
 } from "react-icons/fa";
+import logo from "../../../assets/LogoDark.png";
 
 export default function RegisterDelivery() {
   const navigate = useNavigate();
@@ -45,15 +46,19 @@ export default function RegisterDelivery() {
 
   return (
     <div className="flex min-h-screen">
-      <div className="w-1/2 bg-black text-white flex flex-col justify-center items-center p-12">
-        <h1 className="text-5xl font-extrabold mb-6 flex items-center gap-4">
-          <FaShoppingBag className="text-white" /> Qwikko
-        </h1>
-        <p className="text-xl max-w-md text-center mt-10">
+      {/* Left side */}
+      <div className="w-1/2 bg-black text-white p-6 relative h-[100vh]">
+        <img
+          src={logo}
+          alt="Qwikko Logo"
+          className="w-100 h-100 object-contain absolute top-25 left-1/2 transform -translate-x-1/2"
+        />
+        <p className="text-2xl max-w-md absolute top-[360px] left-1/2 transform -translate-x-1/2 text-center">
           Welcome to Qwikko! Start your delivery journey with us.
         </p>
       </div>
 
+      {/* Right side */}
       <div className="w-1/2 flex flex-col justify-center items-center p-12 bg-white">
         <h2 className="text-3xl font-bold mb-6">Register Delivery Company</h2>
 
@@ -125,16 +130,41 @@ export default function RegisterDelivery() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white p-3 rounded-lg"
+            className="w-full bg-black text-white p-3 rounded-lg transition-all duration-300 hover:bg-gray-800 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
+        {/* Google Sign-in button */}
+        <div className="w-full max-w-md mt-4">
+          <button
+            type="button"
+            className="w-full border border-gray-400 bg-transparent text-gray-700 p-3 rounded-lg transition-all duration-300 hover:bg-gray-100 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 cursor-pointer"
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png"
+              alt="Google"
+              className="w-5 h-5"
+            />
+            <span>Sign in with Google</span>
+          </button>
+        </div>
+
         {error && <p className="mt-4 text-center text-red-600">{error}</p>}
         {successMessage && (
           <p className="mt-4 text-center text-green-600">{successMessage}</p>
         )}
+
+        <p className="mt-6 text-center text-sm">
+          Already have an account?{" "}
+          <button
+            onClick={() => navigate("/delivery/login")}
+            className="text-blue-600 hover:underline cursor-pointer"
+          >
+            Login here
+          </button>
+        </p>
       </div>
     </div>
   );

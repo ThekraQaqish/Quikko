@@ -30,7 +30,7 @@ export default function TrackingPage() {
   if (!order) return <p className="text-center mt-10">❌ Order not found</p>;
 
   const formatCurrency = (value) =>
-    value.toLocaleString("en-JO", { style: "currency", currency: "JOD" });
+    value.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
   return (
     <div className="max-w-5xl mx-auto mt-10 space-y-10 p-6">

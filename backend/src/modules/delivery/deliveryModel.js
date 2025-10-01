@@ -114,52 +114,8 @@ exports.updateProfileByUserId = async (userId, data) => {
  * @param {number} orderId - Order ID
  * @returns {Promise<Object|null>} Order joined with company info or null
  */
-// exports.getOrderWithCompany = async (orderId) => {
-//   const orderRes = await pool.query(
-//     `SELECT
-//         o.id AS order_id,
-//         o.status,
-//         o.payment_status,
-//         o.shipping_address,
-//         o.created_at,
-//         u.id AS customer_user_id,
-//         u.name AS customer_name,
-//         u.email AS customer_email,
-//         u.phone AS customer_phone,
-//         dc.id AS company_id,
-//         dc.company_name AS company_name
-//     FROM orders o
-//     JOIN users u ON o.customer_id = u.id
-//     LEFT JOIN delivery_companies dc ON o.delivery_company_id = dc.id
-//     WHERE o.id = $1`,
-//     [orderId]
-//   );
-
-//   const order = orderRes.rows[0];
-//   if (!order) return null;
-
-//   const itemsRes = await pool.query(
-//     `SELECT
-//         oi.id AS order_item_id,
-//         p.id AS product_id,
-//         p.name AS product_name,
-//         p.description AS product_description,
-//         oi.quantity,
-//         oi.price AS item_price,
-//         oi.variant
-//     FROM order_items oi
-//     JOIN products p ON p.id = oi.product_id
-//     WHERE oi.order_id = $1`,
-//     [orderId]
-//   );
-
-//   order.items = itemsRes.rows;
-
-//   return order;
-// };
 
 exports.getOrderWithCompany = async function (orderId) {
-  // جلب بيانات الطلب + العميل + الشركة
   const orderRes = await pool.query(
     `SELECT
         o.id AS order_id,
@@ -229,6 +185,7 @@ exports.updateStatus = async (orderId, status) => {
   );
   return result.rows[0];
 };
+
 
 /**
  * Get order by ID
@@ -500,5 +457,91 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     pending_count: pendingRes.rows[0]?.pending_count || 0,
   };
 };
+/**
+ * Get all items for a specific order
+ * @async
+ * @function
+ * @param {number} orderId - The ID of the order to retrieve items for
+ * @returns {Promise<Array<Object>>} A list of order items
+ * @property {number} return[].id - The unique ID of the order item
+ * @property {number} return[].order_id - The order ID this item belongs to
+ * @property {number} return[].product_id - The ID of the product
+ * @property {number} return[].quantity - The quantity of the product in this order
+ * @property {string} return[].price - The price of this product in the order
+ * @property {Object} return[].variant - Any variant information (e.g., size, color)
+ * @property {string} return[].vendor_status - The vendor's status for this item (e.g., 'accepted', 'rejected')
+ */
+exports.getOrderItems = async (orderId) => {
+  const result = await pool.query(
+    `SELECT * FROM order_items WHERE order_id = $1`,
+    [orderId]
+  );
+  return result.rows;
+};
+
+/**
+ * Check and update accepted orders for a delivery company
+ * @async
+ * @param {number} companyId - The delivery company's ID
+ * @returns {Promise<void>} - Resolves when all eligible orders are updated
+ * @description
+ * - Fetches all orders with status = 'pending' for the given company.
+ * - Checks each order's items:
+ *   - If all `order_items.vendor_status` are 'accepted', the order's status is updated to 'accepted'.
+ * - Orders without items are skipped.
+ */
+exports.checkAndUpdateAcceptedOrdersForCompany = async (companyId) => {
+  const pendingOrders = await pool.query(
+    `SELECT id FROM orders WHERE delivery_company_id = $1 AND status = 'pending'`,
+    [companyId]
+  );
+
+  for (const order of pendingOrders.rows) {
+    const items = await pool.query(
+      `SELECT vendor_status FROM order_items WHERE order_id = $1`,
+      [order.id]
+    );
+
+    if (items.rows.length === 0) continue;
+
+    const allAccepted = items.rows.every(
+      (item) => item.vendor_status === "accepted"
+    );
+
+    // ✅ لو كلهم accepted نحدث حالة الأوردر
+    if (allAccepted) {
+      await pool.query(
+        `UPDATE orders SET status = 'accepted', updated_at = NOW() WHERE id = $1`,
+        [order.id]
+      );
+    }
+  }
+};
+
+/**
+ * Update payment status for a specific order
+ * @async
+ * @param {number} orderId
+ * @param {"PAID"|"UNPAID"} paymentStatus
+ * @returns {Promise<Object|null>}
+ */
+exports.updatePaymentStatus = async (orderId, paymentStatus) => {
+  const result = await pool.query(
+    `UPDATE orders
+     SET payment_status = $1, updated_at = NOW()
+     WHERE id = $2
+     RETURNING *`,
+    [paymentStatus, orderId]
+  );
+  return result.rows[0] || null;
+};
+
+
+
+
+
+
+
+
 
 

@@ -109,6 +109,9 @@ router.delete("/coverage/:id", protect,authorizeRole('delivery'), DeliveryContro
 router.get("/reports", protect, authorizeRole("delivery"),DeliveryController.getDeliveryReport);
 
 
+router.put("/:id/paymentstatus", protect, authorizeRole("delivery"),DeliveryController.updatePaymentStatus);
+
+
 module.exports = router;
 
 /* =================== Swagger Documentation =================== */
