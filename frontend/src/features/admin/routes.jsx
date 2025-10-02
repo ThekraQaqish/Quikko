@@ -6,6 +6,8 @@ import Layout from "./layout/layout";
 import VendorPage from "./vendor/vendor";
 import DeliveryPage from "./delivery/delivery";
 import OrdersPage from "./orders/order";
+import CMSPage from "./CMS/cms";
+import Profile from "./layout/profile";
 
 function App() {
   return (
@@ -56,15 +58,15 @@ function App() {
               path="/cms"
               element={
                 <ProtectedRoute role="admin">
-                  
+                  <CMSPage />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/settings"
+              path="/profile"
               element={
                 <ProtectedRoute role="admin">
-                  
+                  <Profile />
                 </ProtectedRoute>
               }
             />

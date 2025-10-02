@@ -47,9 +47,6 @@ export default function VendorPage() {
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <button className="flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-            <FaFilter className="w-5 h-5" />
-          </button>
         </div>
         <div className="flex space-x-4 text-sm font-medium">
           {["all", "approved", "pending", "rejected"].map((filter) => (

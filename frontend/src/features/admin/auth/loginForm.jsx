@@ -1,4 +1,4 @@
-import { loginAdmin } from "./authApi";
+import { loginAdmin, profile } from "./authApi";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -41,18 +41,12 @@ export default function LoginForm() {
       const data = await loginAdmin(formData);
 
       const token = data.token;
-      const decoded = jwtDecode(token);
 
       localStorage.setItem("token", token);
-      localStorage.setItem("role", decoded.role);
 
-      if (decoded.role !== "admin") {
-        alert("You are not authorized to access the admin panel");
-        return;
-      }
+      const profileData = await profile();
+      localStorage.setItem("user", JSON.stringify(profileData.user));
 
-      alert("Login successful!");
-      setFormData({ email: "", password: "" });
       navigate("/home");
     } catch (err) {
       alert(err.message);
@@ -62,15 +56,6 @@ export default function LoginForm() {
   return (
     <div className="flex min-h-screen">
       {/* Left Section */}
-      <div className="w-1/2 bg-black text-white flex flex-col justify-center items-center p-12">
-        <h1 className="text-5xl font-extrabold mb-6">Qwikko</h1>
-        <p className="text-xl max-w-md text-center">
-          Welcome Admin! Please log in to access the Qwikko dashboard and manage
-          the platform.
-        </p>
-      </div>
-
-      {/* Right Section */}
       <div className="w-1/2 flex flex-col justify-center items-center p-12 bg-white">
         <h2 className="text-3xl font-bold mb-6">Login</h2>
 
@@ -129,6 +114,14 @@ export default function LoginForm() {
             Login
           </button>
         </form>
+      </div>
+      {/* Right Section */}
+      <div className="w-1/2 bg-black text-white flex flex-col justify-center items-center p-12">
+        <h1 className="text-5xl font-extrabold mb-6">Qwikko</h1>
+        <p className="text-xl max-w-md text-center">
+          Welcome Admin! Please log in to access the Qwikko dashboard and manage
+          the platform.
+        </p>
       </div>
     </div>
   );

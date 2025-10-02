@@ -41,7 +41,7 @@ export default function OrdersCard({ order }) {
 
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
           <span className="font-medium"><span className="mr-2">•</span>Total Amount: ${total_amount}</span>
-          <span className="font-medium"><span className="mr-2">•</span>Store Name: {items?.[0]?.name}</span>
+          <span className="font-medium"><span className="mr-2">•</span>Vendor Name: {items?.[0]?.vendor?.name}</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">

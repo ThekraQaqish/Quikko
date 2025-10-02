@@ -1,12 +1,7 @@
-export async function GetAllCMS( status, type, title ) {
+export async function GetAllCategory() {
   const token = localStorage.getItem("token");
 
-  const queryParams = new URLSearchParams();
-  if (status) queryParams.append("status", status);
-  if (type) queryParams.append("type", type);
-  if (title) queryParams.append("title", title);
-
-  const response = await fetch(`http://localhost:3000/api/cms?${queryParams.toString()}`, {
+  const response = await fetch("http://localhost:3000/api/categories", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -17,58 +12,58 @@ export async function GetAllCMS( status, type, title ) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "cms data failed. Please try again.");
+    throw new Error(data.message || "category data failed. Please try again.");
   }
 
-  return data;
+  return data.data || data;
 }
 
-export async function AddCMS(cmsData) {
+export async function AddCategory(categoryData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/cms", {
+  const response = await fetch("http://localhost:3000/api/categories", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(cmsData),
+    body: JSON.stringify(categoryData),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to add cms");
+    throw new Error(data.message || "Failed to add category");
   }
 
   return data;
 }
 
-export async function EditCMS(id, cmsData) {
+export async function EditCategory(id, categoryData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/cms/${id}`, {
+  const response = await fetch(`http://localhost:3000/api/categories/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(cmsData),
+    body: JSON.stringify(categoryData),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to edit cms");
+    throw new Error(data.message || "Failed to edit category");
   }
 
   return data;
 }
 
-export async function DeleteCMS(id) {
+export async function DeleteCategory(id) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/cms/${id}`, {
+  const response = await fetch(`http://localhost:3000/api/categories/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -79,7 +74,7 @@ export async function DeleteCMS(id) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to delete cms");
+    throw new Error(data.message || "Failed to delete category");
   }
 
   return { id }; 
