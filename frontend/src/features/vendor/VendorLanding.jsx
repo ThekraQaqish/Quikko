@@ -1,10 +1,12 @@
 // src/pages/vendor/VendorLanding.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaShoppingCart, FaUsers, FaChartLine, FaStore } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { getVendorLandingCMS } from "./VendorAPI";
 
 export default function VendorLanding() {
   const navigate = useNavigate();
+  const [heroCMS, setHeroCMS] = useState(null);
 
   const benefits = [
     {
@@ -29,21 +31,46 @@ export default function VendorLanding() {
     },
   ];
 
+  useEffect(() => {
+    const fetchCMS = async () => {
+      try {
+        const data = await getVendorLandingCMS();
+        if (data.length > 0) {
+          setHeroCMS(data[0]); // أول عنصر من الباكيند للهيرو
+        }
+      } catch (err) {
+        console.error("Failed to fetch CMS data:", err);
+      }
+    };
+    fetchCMS();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-black text-white py-24 flex flex-col items-center text-center px-6">
-        <h1 className="text-5xl font-extrabold mb-6">Grow Your Store with Qwikko</h1>
-        <p className="text-xl mb-8 max-w-xl">
-          Join our marketplace today and reach thousands of customers. Manage your store easily and boost your sales.
-        </p>
-        <button
-          onClick={() => navigate("/vendor/register")}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors"
-        >
-          Register Your Store
-        </button>
-      </section>
+    {/* Hero Section */}
+{heroCMS && (
+  <section className="relative py-24 flex flex-col items-center text-center px-6">
+    <img
+      src={heroCMS.image_url}
+      alt={heroCMS.title}
+      className="w-full max-h-[600px] object-cover rounded-lg shadow-md"
+    />
+
+    <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center px-6">
+      <h1 className="text-5xl font-extrabold mb-6 text-white drop-shadow-lg">
+        {heroCMS.title}
+      </h1>
+      <p className="text-xl mb-8 text-white drop-shadow-md">{heroCMS.content}</p>
+      <button
+        onClick={() => navigate("/vendor/register")}
+        className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors"
+      >
+        Register Your Store
+      </button>
+    </div>
+  </section>
+)}
+
 
       {/* Benefits Section */}
       <section className="py-20 px-6">

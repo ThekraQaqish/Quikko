@@ -3,7 +3,7 @@ import { fetchOrderItems, updateOrderItemStatus } from "../VendorAPI";
 
 export default function OrderManagement() {
   const [items, setItems] = useState([]);
-  const [filter, setFilter] = useState(""); // فلتر الحالة
+  const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
 
   const allowedStatuses = ["pending", "accepted", "rejected"];
@@ -12,13 +12,10 @@ export default function OrderManagement() {
     setLoading(true);
     try {
       const data = await fetchOrderItems();
-
-      // فلترة حسب الحالة
       const filtered =
         statusFilter === ""
           ? data
           : data.filter((i) => i.vendor_status === statusFilter);
-
       setItems(filtered);
     } catch (err) {
       console.error("Error loading order items:", err);
@@ -44,17 +41,19 @@ export default function OrderManagement() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Order Management (Vendor Items)</h1>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold mb-4">Order Management</h1>
 
       {/* فلتر الحالة */}
-      <div className="mb-4 flex items-center gap-2">
-        <label htmlFor="statusFilter">Filter by Item Status:</label>
+      <div className="mb-6 flex items-center gap-3">
+        <label htmlFor="statusFilter" className="font-medium text-gray-700">
+          Filter by Item Status:
+        </label>
         <select
           id="statusFilter"
           value={filter}
           onChange={handleFilterChange}
-          className="border p-2 rounded"
+          className="border rounded-lg p-2 bg-gray-50 text-gray-700 focus:ring-2 focus:ring-orange-300"
         >
           <option value="">All</option>
           {allowedStatuses.map((status) => (
@@ -65,46 +64,62 @@ export default function OrderManagement() {
         </select>
       </div>
 
-      {loading ? (
-        <p>Loading items...</p>
-      ) : (
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-gray-200 text-center">
-              <th className="border p-2">Item ID</th>
-              <th className="border p-2">Order ID</th>
-              <th className="border p-2">Product</th>
-              <th className="border p-2">Quantity</th>
-              <th className="border p-2">Vendor Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.order_item_id} className="text-center">
-                <td className="border p-2">{item.order_item_id}</td>
-                <td className="border p-2">{item.order_id}</td>
-                <td className="border p-2">{item.product_name}</td>
-                <td className="border p-2">{item.quantity}</td>
-                <td className="border p-2">
-                  <select
-                    value={item.vendor_status}
-                    onChange={(e) =>
-                      handleStatusChange(item.order_item_id, e.target.value)
-                    }
-                    className="border rounded p-1"
-                  >
-                    {allowedStatuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </td>
+      {/* جدول الطلبات */}
+      <div className="bg-white p-6 rounded-2xl shadow">
+        {loading ? (
+          <p className="text-gray-500">Loading items...</p>
+        ) : (
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="text-left text-gray-600 border-b">
+                <th className="p-2">Item ID</th>
+                <th className="p-2">Order ID</th>
+                <th className="p-2">Product</th>
+                <th className="p-2">Quantity</th>
+                <th className="p-2">Vendor Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.order_item_id} className="border-b hover:bg-gray-50 transition">
+                  <td className="p-2">{item.order_item_id}</td>
+                  <td className="p-2">{item.order_id}</td>
+                  <td className="p-2">{item.product_name}</td>
+                  <td className="p-2">{item.quantity}</td>
+                  <td className="p-2">
+                    <select
+                      value={item.vendor_status}
+                      onChange={(e) =>
+                        handleStatusChange(item.order_item_id, e.target.value)
+                      }
+                      className={`p-1 rounded-md font-medium ${
+                        item.vendor_status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : item.vendor_status === "accepted"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {allowedStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="p-4 text-center text-gray-500">
+                    No items found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

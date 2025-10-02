@@ -20,7 +20,7 @@ const { protect, authorizeRole } = require('../../middleware/authMiddleware');
  * @example
  * GET /api/cms
  */
-router.get('/', protect, authorizeRole('admin'), cmsController.getAllCMS);
+router.get('/', cmsController.getAllCMS);
 
 /**
  * @route POST /api/cms
@@ -66,6 +66,8 @@ router.put('/:id', protect, authorizeRole('admin'), validateCMS, cmsController.u
  * @returns {Promise<void>} JSON message confirming deletion
  */
 router.delete('/:id', protect, authorizeRole('admin'), cmsController.deleteCMS);
+
+
 
 module.exports = router;
 

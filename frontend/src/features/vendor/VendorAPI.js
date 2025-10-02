@@ -7,7 +7,18 @@ const getAuthHeaders = () => {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
+// 🔹 جلب محتوى الـ CMS للـ Vendor Landing Page
+export const getVendorLandingCMS = async () => {
+  const res = await fetch(
+    `/api/cms?type=vendor&title=Landing Page`,
+    { headers: getAuthHeaders() }
+  );
 
+  if (!res.ok) throw new Error("Failed to fetch vendor landing CMS");
+  const json = await res.json();
+  console.log("🔹 API Response (CMS - Vendor Landing):", json);
+  return json || [];
+};
 // 🔹 جلب جميع المنتجات
 export const fetchProducts = async () => {
   const res = await fetch("/api/vendor/products", {

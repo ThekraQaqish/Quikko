@@ -20,11 +20,11 @@ const { body, validationResult } = require('express-validator');
 exports.validateCMS = [
   body('title')
     .notEmpty()
-    .withMessage('Title is required'),
+    .withMessage('Landing Page'),
 
-  body('type')
-    .isIn(['page', 'banner'])
-    .withMessage('Type must be "page" or "banner"'),
+ body('type')
+    .isIn(['page', 'banner', 'user', 'customer', 'vendor', 'delivery'])
+    .withMessage('Type must be one of: page, banner, user, customer, vendor, delivery'),
 
   body('status')
     .optional()
