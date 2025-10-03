@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { 
   FaBars, FaUser, FaShoppingCart, FaStore, FaBoxOpen, FaPhone, 
-  FaInfoCircle, FaClipboardList, FaCog, FaSignOutAlt, FaSearch 
+  FaInfoCircle, FaClipboardList, FaCog, FaSignOutAlt, FaSearch ,FaBell 
 } from "react-icons/fa";
 import { fetchProfile, updateProfile } from "../../profileSlice";
 import { setSearchQuery } from "../../productsSlice";
@@ -16,12 +16,17 @@ const Navbar = () => {
   const { allCarts = [] } = useSelector((state) => state.cart);
 
   const cartItemCount = allCarts.length;
+  const token = useSelector((state) => state.customerAuth.token);
 
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Notifications
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const sidebarRef = useRef();
 
@@ -33,6 +38,30 @@ const Navbar = () => {
     dispatch(fetchProfile());
     dispatch(fetchAllCarts());
   }, [dispatch]);
+
+
+useEffect(() => {
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/api/notifications/unread-count", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch unread count");
+      const data = await res.json(); // { count: 5 }
+      setUnreadCount(data.count);
+    } catch (err) {
+      console.error("Error fetching unread count:", err);
+    }
+  };
+
+  if (token) fetchUnreadCount();
+}, [token]);
+
+// Sync unreadCount with notifications
+  useEffect(() => {
+    setUnreadCount(notifications.filter(n => !n.read_status).length);
+  }, [notifications]);
+
 
   useEffect(() => {
     if (!searchTerm.trim()) return setResults([]);
@@ -232,6 +261,112 @@ const Navbar = () => {
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                   {cartItemCount}
                 </span>
+              )}
+            </div>
+
+            {/* Notifications */}
+            <div className="relative">
+              <button
+                onClick={async () => {
+                  console.log("Notification button clicked");
+                  setNotificationsOpen(prev => !prev);
+                  console.log("Notifications modal state:", !notificationsOpen);
+
+                  if (!notificationsOpen) {
+                    try {
+                      console.log("Fetching notifications from backend...");
+                      const res = await fetch("http://localhost:3000/api/notifications", {
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+
+                      if (!res.ok) throw new Error("Failed to fetch notifications");
+
+                      const data = await res.json();
+                      console.log("Fetched notifications:", data);
+                      setNotifications(data);
+                    } catch (err) {
+                      console.error("Error fetching notifications:", err);
+                    }
+                  }
+                }}
+                className="text-gray-700 hover:text-gray-900 transition-colors duration-200"
+              >
+                <FaBell size={22} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div
+                  className="fixed inset-0 z-50"
+                  onClick={() => setNotificationsOpen(false)}
+                >
+                  <div
+                    className="bg-white rounded-lg shadow-lg w-96 max-h-[70vh] overflow-y-auto absolute top-16 right-0 ml-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="px-4 py-2 border-b flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Notifications</h3>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={async () => {
+                            const unreadIds = notifications.filter(n => !n.read_status).map(n => n.id);
+                            if (unreadIds.length === 0) return;
+                            
+                            try {
+                              const res = await fetch("http://localhost:3000/api/notifications/mark-read", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ ids: unreadIds }),
+                              });
+
+                              if (!res.ok) throw new Error("Failed to mark notifications as read");
+                              const data = await res.json();
+                              console.log("Marked notifications response:", data);
+
+                              setNotifications(prev =>
+                                prev.map(n => ({ ...n, read_status: true }))
+                              );
+                              setUnreadCount(0);
+                            } catch (err) {
+                              console.error("Error marking notifications as read:", err);
+                            }
+                          }}
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          Mark all as read
+                        </button>
+                        <button
+                          onClick={() => setNotificationsOpen(false)}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    <ul>
+                      {notifications.length === 0 && (
+                        <li className="p-4 text-gray-500">No notifications</li>
+                      )}
+                      {notifications.map((n) => (
+                        <li
+                          key={n.id}
+                          className={`p-4 border-b hover:bg-gray-50 ${!n.read_status ? "bg-blue-50" : ""}`}
+                        >
+                          <h4 className="font-medium">{n.title}</h4>
+                          <p className="text-sm text-gray-600">{n.message}</p>
+                          <span className="text-xs text-gray-400">{new Date(n.created_at).toLocaleString()}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               )}
             </div>
           </div>
