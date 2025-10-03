@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProfile, updateProfile } from "../profileSlice";
+import PaymentMethodsPanel from "../components/PaymentMethodsPanel";
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
@@ -15,12 +16,14 @@ const ProfilePage = () => {
   });
 
   const [successMsg, setSuccessMsg] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
-  // تهيئة الفورم بالبيانات من الـ Redux عند التحميل
+  // تحميل البيانات من Redux عند التحميل
   useEffect(() => {
     dispatch(fetchProfile());
   }, [dispatch]);
 
+  // تهيئة الفورم عند توفر البيانات
   useEffect(() => {
     if (profile) {
       setFormData({
@@ -33,7 +36,7 @@ const ProfilePage = () => {
   }, [profile]);
 
   const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -42,6 +45,7 @@ const ProfilePage = () => {
     try {
       await dispatch(updateProfile(formData)).unwrap();
       setSuccessMsg("Profile updated successfully!");
+      setIsEditing(false); // العودة للعرض فقط بعد الحفظ
     } catch (err) {
       console.error(err);
     }
@@ -54,57 +58,89 @@ const ProfilePage = () => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-xl">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Your Profile</h1>
-      <form className="bg-white shadow rounded-lg p-6 space-y-4" onSubmit={handleSubmit}>
-        {successMsg && (
-          <p className="text-green-600 font-semibold">{successMsg}</p>
-        )}
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Name</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
+
+      {!isEditing ? (
+        <div className="bg-white shadow rounded-lg p-6 space-y-2">
+          <p><strong>Name:</strong> {profile.name}</p>
+          <p><strong>Email:</strong> {profile.email}</p>
+          <p><strong>Phone:</strong> {profile.phone}</p>
+          <p><strong>Address:</strong> {profile.address}</p>
+          <button
+            onClick={() => setIsEditing(true)}
+            className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded"
+          >
+            Edit
+          </button>
         </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Phone</label>
-          <input
-            type="text"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Address</label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded"
-        >
-          Update Profile
-        </button>
-      </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
+          {successMsg && <p className="text-green-600 font-semibold">{successMsg}</p>}
+          {/* Name */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Name</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          {/* Email (read-only) */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              readOnly
+              className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
+            />
+          </div>
+          {/* Phone */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Phone</label>
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          {/* Address */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Address</label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          {/* Buttons */}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div>
+        <PaymentMethodsPanel />
+      </div>
     </div>
   );
 };

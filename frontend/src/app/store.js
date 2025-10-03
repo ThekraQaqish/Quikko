@@ -7,6 +7,7 @@ import profileReducer from "../features/customer/customer/profileSlice";
 import categoriesReducer from "../features/customer/customer/categoriesSlice";
 import storesReducer from "../features/customer/customer/storesSlice";
 import reviewsReducer from "../features/customer/review/reviewSlice";
+import paymentReducer from "../features/customer/customer/paymentSlice";
 
 const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ const store = configureStore({
     categories: categoriesReducer,
     stores: storesReducer, 
     reviews: reviewsReducer,
+    payment: paymentReducer,
   },
 });
 

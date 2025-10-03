@@ -11,6 +11,15 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
+export const fetchProductsWithSorting = createAsyncThunk(
+  "products/fetchProductsWithSorting",
+  async ({ sort } = {}) => {
+    // sort can be: price_asc, price_desc, most_sold
+    const products = await customerAPI.getProductsWithSorting(sort);
+    return products;
+  }
+);
+
 const productsSlice = createSlice({
   name: "products",
   initialState: {
@@ -18,10 +27,14 @@ const productsSlice = createSlice({
     status: "idle",
     error: null,
     searchQuery: "",
+    sortBy: "default",
   },
   reducers: {
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload.toLowerCase();
+    },
+    setSortBy: (state, action) => {
+      state.sortBy = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -36,9 +49,20 @@ const productsSlice = createSlice({
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;
+      })
+      .addCase(fetchProductsWithSorting.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchProductsWithSorting.fulfilled, (state, action) => {
+        state.items = action.payload || [];
+        state.status = "succeeded";
+      })
+      .addCase(fetchProductsWithSorting.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
       });
   },
 });
-export const { setSearchQuery } = productsSlice.actions;
+export const { setSearchQuery, setSortBy } = productsSlice.actions;
 
 export default productsSlice.reducer;

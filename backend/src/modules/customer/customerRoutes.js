@@ -5,6 +5,7 @@ const { getAllProductsValidator } = require("./customerValidators");
 const router = express.Router();
 const identifyCustomer = require("../../middleware/identifyCustomer");
 const guestToken = require("../../middleware/guestToken");
+const customerModel = require("./customerModel");
 
 /**
  * @route GET /api/customer/
@@ -174,6 +175,14 @@ router.get("/products", customerController.getAllProducts);
  */
 router.get('/orders', protect, customerController.getOrders);
 router.get("/stores/:id/products", customerController.getStoreProducts);
+router.put("/:orderId/payment", customerController.updatePaymentStatus);
+router.get('/sorted', customerController.getProductsWithSorting);
+// Routes
+router.get("/payment", protect, customerController.paymentController.getUserPayments);
+router.post("/payment", protect, customerController.paymentController.createPayment);
+router.delete("/payment/:id", protect, customerController.paymentController.deletePayment);
+router.post("/:orderId/reorder", protect, customerController.reorder);
+router.delete("/profile",  protect, customerModel.deleteProfile);
 
 module.exports = router;
 
