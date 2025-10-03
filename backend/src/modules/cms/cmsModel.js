@@ -16,16 +16,9 @@ const pool = require('../../config/db');
  * const cmsPages = await CMSModel.getAllCMS('active');
  * console.log(cmsPages);
  */
-exports.getAllCMS = async (status) => {
-  let query = 'SELECT * FROM cms';
-  const params = [];
-  if (status) {
-    query += ' WHERE status=$1';
-    params.push(status);
-  }
-  query += ' ORDER BY created_at DESC';
-  const { rows } = await pool.query(query, params);
-  return rows;
+exports.getAllCMS = async (type, title) => {
+  const { rows } = await pool.query(`SELECT content, image_url FROM cms WHERE type=$1 AND status='active' AND title=$2`, [type,title]);
+  return rows; 
 };
 
 /**

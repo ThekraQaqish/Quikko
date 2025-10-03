@@ -89,6 +89,11 @@ import CartDetailPage from "./features/customer/customer/pages/CartDetailPage";
 // ✅ استدعاء الـ thunk لجلب المستخدم
 import { fetchCurrentUser } from "./features/customer/customer/cartSlice";
 import StoresPage from "./features/customer/customer/pages/StoresPage";
+import TrackOrderPage from "./features/customer/customer/pages/TrackOrderPage";
+import PaymentDetailsPage from "./features/customer/customer/pages/PaymentDetailsPage";
+import LandingPage from "./features/customer/customer/pages/LandingPage";
+import HomePage from "./features/customer/customer/pages/HomePage";
+import SettingsPage from "./features/customer/customer/pages/SettingsPage";
 
 const AppRoutes = () => {
   const token = useSelector((state) => state.customerAuth.token);
@@ -101,23 +106,32 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/auth/*" element={<CustomerAuthRoutes />} />
+      <Route
+        path="/"
+        element={token ? <Navigate to="/home" replace /> : <LandingPage />}
+      />
+
 
       {/* Routes بعد تسجيل الدخول */}
       <Route element={<MainLayout />}>
-        <Route path="/" element={<ProductsPage />} />
+        <Route path="/home" element={<HomePage/>} />
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/products" element={<ProductsPage />} />
         <Route path="/cart" element={<CartListPage key={Date.now()}/>} />
         <Route path="/cart/:id" element={<CartDetailPage />} />
-
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/order-details/:orderId" element={<OrderDetailsPage />} />
         <Route path="/stores" element={<StoresPage />} />
-        <Route path="/stores/:id" element={<StorePage />} />      </Route>
-
-      <Route
-        path="*"
-        element={<Navigate to={token ? "/" : "/auth/login"} replace />}
-      />
+        <Route path="/stores/:id" element={<StorePage />} />
+        <Route path="/track-order/:orderId" element={<TrackOrderPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/payment-details" element={<PaymentDetailsPage />} />
+      </Route>
+        <Route
+          path="*"
+          element={<Navigate to={token ? "/" : "/auth/login"} replace />}
+        />
     </Routes>
   );
 };

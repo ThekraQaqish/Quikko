@@ -20,7 +20,7 @@ const { protect, authorizeRole } = require('../../middleware/authMiddleware');
  * @example
  * GET /api/cms
  */
-router.get('/', protect, authorizeRole('admin'), cmsController.getAllCMS);
+router.get('/', cmsController.getAllCMS);
 
 /**
  * @route POST /api/cms

@@ -74,7 +74,7 @@ const StorePage = () => {
         product,
         quantity,
         variant: product.variant || {},
-      });
+      });ئ
 
       dispatch(fetchCart());
       console.log("Item added to cart!");

@@ -63,16 +63,33 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+// Increase or decrease item quantity
+export const updateItemQuantity = createAsyncThunk(
+  "cart/updateItemQuantity",
+  async ({ cartId, itemId, quantity }, { dispatch }) => {
+    await customerAPI.updateItem(itemId, { quantity });
+    // بعد التحديث نجيب الكارت من جديد
+    dispatch(fetchCart(cartId));
+    return { itemId, quantity };
+  }
+);
+
+
+
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
     allCarts: [],
     currentCart: null,
+    tempCartId: null,
     user: null, 
     status: "idle",
     error: null,
   },
-  reducers: {},
+  reducers: {
+    setTempCartId: (state, action) => {
+      state.tempCartId = action.payload;
+    },},
   extraReducers: (builder) => {
     builder
       // fetchAllCarts
@@ -118,5 +135,6 @@ const cartSlice = createSlice({
     });
   },
 });
+export const { setTempCartId } = cartSlice.actions;
 
 export default cartSlice.reducer;

@@ -1,15 +1,20 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProducts } from "../productsSlice";
-import { fetchCart } from "../cartSlice";
+import { fetchProducts,fetchProductsWithSorting, setSortBy  } from "../productsSlice";
+import { fetchCart} from "../cartSlice";
 import { fetchCategories, toggleCategory } from "../categoriesSlice";
 import CategoryList from "../components/CategoryList";
 import ProductCard from "../components/ProductCard";
 import customerAPI from "../services/customerAPI";
+
+
 const ProductsPage = () => {
   const dispatch = useDispatch();
-
-  const { items: products = [], status, error, searchQuery } = useSelector(
+  const currentCart = useSelector((state) => state.cart.currentCart);
+  const tempCartId = useSelector((state) => state.cart.tempCartId);
+  const cartIdToUse = tempCartId || currentCart?.id;
+  
+  const { items: products = [], status, error, searchQuery, sortBy  } = useSelector(
     (state) => state.products
   );
   const { items: categories = [], selectedCategories = [] } = useSelector(
@@ -17,37 +22,46 @@ const ProductsPage = () => {
   );
 
   useEffect(() => {
+    if (sortBy && sortBy !== "default") {
+    dispatch(fetchProductsWithSorting({ sort: sortBy }));
+  } else {
     dispatch(fetchProducts());
-    dispatch(fetchCart());
+  }
+    // dispatch(fetchCart());
     dispatch(fetchCategories());
-  }, [dispatch]);
+  }, [dispatch, sortBy]);
 
-  const handleAddToCart = async (product, quantity = 1) => {
+  const handleSortChange = (e) => {
+    const selectedSort = e.target.value;
+    dispatch(setSortBy(selectedSort)); 
+    dispatch(fetchProductsWithSorting({ sort: selectedSort })); 
+  };
+
+const handleAddToCart = async (product, quantity = 1) => {
   try {
-    const cartResponse = await customerAPI.getOrCreateCart();
-    const cartId = cartResponse?.id || cartResponse?.data?.id;
 
+    const cart = await customerAPI.getOrCreateCart(cartIdToUse);
+    const cartId = cart?.id || cart?.data?.id;
     if (!cartId) {
-      console.error("No cart ID found!");
+      console.error("No cart ID found or created!");
       return;
     }
 
-    console.log("Adding to cart:", cartId, product.id);
-
-    const res = await customerAPI.addItem({
+    // ✅ Add item always, backend يتأكد إذا كان موجود أو لا
+    await customerAPI.addItem({
       cartId,
       product,
       quantity,
       variant: product.variant || {},
     });
 
-    console.log("Added to cart:", res);
-    dispatch(fetchCart());
+    dispatch(fetchCart(cartId));
+    alert('added to cart');
   } catch (err) {
-    console.error("Failed to add item:", err.response?.data || err.message);
+    const msg = err.response?.data?.message || err.message;
+    alert(msg);
+    };
   }
-};
-
 
 
   const handleToggleCategory = (category) => {
@@ -56,6 +70,7 @@ const ProductsPage = () => {
 
   // فلترة المنتجات حسب الكاتيجوريز و search query
   const filteredProducts = products
+    .filter(p => p.quantity > 0)
     .filter((p) =>
       selectedCategories.length === 0
         ? true
@@ -87,6 +102,20 @@ const ProductsPage = () => {
         Our Products {searchQuery && `(Results for "${searchQuery}")`}
       </h1>
 
+      {/* Sorting dropdown */}
+      <div className="flex justify-end mb-4">
+        <select
+          className="border p-2 rounded"
+          value={sortBy}
+          onChange={handleSortChange}
+        >
+          <option value="default">Default</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="most_sold">Most Ordered</option>
+        </select>
+      </div>
+
       <CategoryList
         categories={categories}
         selectedCategories={selectedCategories}
@@ -98,7 +127,9 @@ const ProductsPage = () => {
           No products found.
         </p>
       ) : (
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -111,5 +142,4 @@ const ProductsPage = () => {
     </div>
   );
 };
-
 export default ProductsPage;

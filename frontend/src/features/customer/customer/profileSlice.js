@@ -13,6 +13,10 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
+export const deleteProfile = createAsyncThunk("profile/delete", async () => {
+  return await customerAPI.deleteProfile(); // راح يعمل DELETE على /profile
+});
+
 const profileSlice = createSlice({
   name: "profile",
   initialState: { data: null, loading: false, error: null },
@@ -30,6 +34,17 @@ const profileSlice = createSlice({
         state.data = action.payload;
       })
       .addCase(fetchProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      .addCase(deleteProfile.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteProfile.fulfilled, (state) => {
+        state.loading = false;
+        state.data = null; // بعد الحذف
+      })
+      .addCase(deleteProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       });

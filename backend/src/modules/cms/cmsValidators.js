@@ -22,10 +22,10 @@ exports.validateCMS = [
     .notEmpty()
     .withMessage('Title is required'),
 
-  body('type')
-    .isIn(['page', 'banner'])
-    .withMessage('Type must be "page" or "banner"'),
-
+  body("type")
+      .isIn(["user", "customer", "vendor", "delivery"])
+      .withMessage("Type must be one of: user, customer, vendor, delivery"),
+      
   body('status')
     .optional()
     .isIn(['active', 'inactive'])
