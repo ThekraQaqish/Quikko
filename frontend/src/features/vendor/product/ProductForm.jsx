@@ -12,8 +12,19 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
     variants: "",
   });
 
+  // ✅ تعديل useEffect للتأكد من أن كل القيم ليست null أو undefined
   useEffect(() => {
-    if (initialData) setFormData(initialData);
+    if (initialData) {
+      setFormData({
+        name: initialData.name || "",
+        description: initialData.description || "",
+        price: initialData.price || "",
+        stock_quantity: initialData.stock_quantity || "",
+        images: initialData.images || "",
+        category_id: initialData.category_id || "",
+        variants: initialData.variants || "",
+      });
+    }
   }, [initialData]);
 
   const handleChange = (e) =>
@@ -21,7 +32,27 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+
+    // 🔹 تحويل images و variants إلى JSON string قبل الإرسال
+    const preparedData = {
+      ...formData,
+      images: formData.images
+        ? JSON.stringify(
+            Array.isArray(formData.images)
+              ? formData.images
+              : [formData.images]
+          )
+        : null,
+      variants: formData.variants
+        ? JSON.stringify(
+            typeof formData.variants === "string"
+              ? JSON.parse(formData.variants)
+              : formData.variants
+          )
+        : null,
+    };
+
+    onSubmit(preparedData);
 
     if (!initialData?.id) {
       setFormData({
@@ -37,10 +68,7 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 w-full p-0"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full p-0">
       {/* Name & Category */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col">

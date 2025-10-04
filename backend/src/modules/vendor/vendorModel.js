@@ -83,11 +83,13 @@ exports.getVendorProducts = async (vendorId) => {
     SELECT *
     FROM products
     WHERE vendor_id = $1
+      AND (is_deleted = FALSE OR is_deleted IS NULL)
     ORDER BY created_at DESC
   `;
   const { rows } = await pool.query(query, [vendorId]);
   return rows;
 };
+
 
 /**
  * Get all orders for a specific vendor.

@@ -12,6 +12,7 @@ import ReportsPage from "./profile/VendorProfilePage";
 import SettingsPage from "./settings/SettingsPage";
 import VendorProfilepage from "./profile/VendorProfilePage";
 import ProtectedRoute from "./ProtectedRoute";
+import VendorNotifications from "./VendorNotifications";
 
 export default function VendorRoutes() {
   return (
@@ -81,6 +82,7 @@ export default function VendorRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="/vendor/notifications" element={<VendorNotifications />} />
       </Route>
     </Routes>
   );

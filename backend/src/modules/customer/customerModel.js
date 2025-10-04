@@ -520,7 +520,7 @@ exports.getAllProducts = async ({ search, categoryId, page, limit }) => {
       v.store_name
     FROM products p
     LEFT JOIN vendors v ON p.vendor_id = v.id
-    WHERE 1=1
+    WHERE (p.is_deleted = FALSE OR p.is_deleted IS NULL)
   `;
   const values = [];
   let idx = 1;
@@ -544,6 +544,7 @@ exports.getAllProducts = async ({ search, categoryId, page, limit }) => {
   const { rows } = await pool.query(baseQuery, values);
   return rows;
 };
+
 
 /**
  * @function getCustomerOrders

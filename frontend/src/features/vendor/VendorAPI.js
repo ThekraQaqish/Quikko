@@ -255,3 +255,20 @@ export const updateVendorProfile = async (profileData) => {
     return null;
   }
 };
+
+// 🔹 جلب الإشعارات
+export const fetchNotifications = async () => {
+  try {
+    const res = await fetch("/api/notifications", {
+      headers: getAuthHeaders(),
+    });
+
+    const json = await res.json();
+    console.log("🔔 API Response (notifications):", json);
+
+    return json || [];
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return [];
+  }
+};

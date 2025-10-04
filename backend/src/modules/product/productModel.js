@@ -19,15 +19,17 @@ const db = require("../../config/db");
 exports.getProductById = async (id) => {
   const result = await db.query(
     `SELECT p.*, v.store_name, c.name AS category_name
-    FROM products p
-    LEFT JOIN vendors v ON p.vendor_id = v.id
-    LEFT JOIN categories c ON p.category_id = c.id
-    WHERE p.id = $1
+     FROM products p
+     LEFT JOIN vendors v ON p.vendor_id = v.id
+     LEFT JOIN categories c ON p.category_id = c.id
+     WHERE p.id = $1
+       AND (p.is_deleted = FALSE OR p.is_deleted IS NULL)
     `,
     [id]
   );
   return result.rows[0] || null;
 };
+
 
 /**
  * Insert a new product into the database.
@@ -164,22 +166,34 @@ exports.updateProduct = async (id, vendor_id, productData) => {
  * await deleteProduct(1, 1);
  */
 exports.deleteProduct = async (id, vendor_id) => {
-  console.log('Deleting productId:', id, 'for vendorId:', vendor_id);
+  console.log('Soft deleting productId:', id, 'for vendorId:', vendor_id);
 
+  // تحقق أولاً من وجود المنتج وحق البائع
   const result = await db.query(
     `SELECT * FROM products WHERE id = $1 AND vendor_id = $2`,
     [id, vendor_id]
   );
   console.log('SELECT check result:', result.rows);
 
+  if (result.rowCount === 0) {
+    throw new Error("Product not found or unauthorized");
+  }
+
+  // تحديث is_deleted بدل الحذف
   const deleteResult = await db.query(
-    `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`,
+    `UPDATE products 
+     SET is_deleted = TRUE
+     WHERE id = $1 AND vendor_id = $2
+     RETURNING *;`,
     [id, vendor_id]
   );
-  console.log('DELETE result:', deleteResult.rows);
+  console.log('Soft delete result:', deleteResult.rows);
 
   if (deleteResult.rowCount === 0) {
     throw new Error("Product not found or unauthorized");
   }
+
+  return deleteResult.rows[0]; // ترجع المنتج بعد التحديث
 };
+
 
